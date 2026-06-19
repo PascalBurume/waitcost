@@ -1,0 +1,87 @@
+# ---------------------------------------------------------------------------
+# WaitCost / InactionCost — model parameters (the agent's "universe")
+# CALIBRATED for CA-600 Los Angeles City & County CoC. Initial homeless
+# compartments and costs are REAL public data; the external at-risk inflow is
+# set by a LEARNED model (model/inflow_model.py). Every value carries a
+# `source` and `confidence` tag. Provenance: data/SOURCES.md.
+# Values still labelled `confidence: low` are modelling assumptions awaiting the
+# next calibration (HUD SPM flow data) — see the brief's limitations section.
+# ---------------------------------------------------------------------------
+meta:
+  coc: "CA-600 Los Angeles City & County CoC"
+  data_vintage: "HUD 2024 PIT (count 1/24/2024) + Census ACS 2024 1-yr (API); costs Economic Roundtable (2024$)"
+  horizon_months: 120          # 10-year horizon
+  discount_annual: 0.03        # 3% social discount rate
+  monte_carlo_runs: 400
+  seed: 42
+  default_budget_musd: 50.0    # default annual intervention budget, $ millions (LA scale)
+
+# Initial number of people in each state.
+# Homeless compartments are REAL (HUD 2024 PIT for CA-600). at_risk / housed
+# are ACS-derived proxies (no PIT category exists for them) — tagged low.
+initial_population:
+  housed_stable: 1204170          # ACS 2024 LA County persons below poverty (1,275,371) - PIT homeless (71,201): housing-vulnerable housed pool [proxy] | source: ACS 2024 1-yr + HUD PIT 2024 | confidence: low
+  at_risk: 96334                  # proxy: ~8% of housing-vulnerable pool, severe-cost-burden/imminent risk (pending HUD CHAS) | source: proxy | confidence: low
+  sheltered: 21692                # HUD 2024 PIT CA-600: Emergency Shelter 19,540 + Transitional Housing 2,152 | source: HUD PIT 2024 | confidence: high
+  unsheltered: 25035              # HUD 2024 PIT CA-600: unsheltered 49,509 - chronically-homeless-unsheltered 24,474 | source: HUD PIT 2024 | confidence: high
+  chronic_unsheltered: 24474      # HUD 2024 PIT CA-600: chronically homeless & unsheltered | source: HUD PIT 2024 | confidence: high
+  exited_positive: 0
+
+# Baseline MONTHLY transition rates (from -> to).
+# Key flows now CALIBRATED from HUD System Performance Measures (CA-600, FY2023):
+# CoC_Perf_CoC_CA-600-2023. Remaining rates are documented priors. See data/SOURCES.md.
+transitions:
+  - {from: at_risk,             to: sheltered,            rate: 0.0258, source: "calibrated so at_risk->homeless flow = SPM M5 (2,485/mo)", confidence: med}
+  - {from: at_risk,             to: housed_stable,        rate: 0.020, source: "prior (pending HUD SPM)",            confidence: low}
+  - {from: sheltered,           to: exited_positive,      rate: 0.098, source: "HUD SPM 2023 M1 (311d avg stay -> exit hazard); M7 32.8%/yr to PH is a subset", confidence: high}
+  - {from: sheltered,           to: unsheltered,          rate: 0.010, source: "prior (shelter->street fallback)",   confidence: low}
+  - {from: unsheltered,         to: sheltered,            rate: 0.030, source: "prior (pending HUD SPM)",            confidence: low}
+  - {from: unsheltered,         to: exited_positive,      rate: 0.010, source: "SPM-informed (slower unsheltered exit)", confidence: low}
+  - {from: unsheltered,         to: chronic_unsheltered,  rate: 0.020, source: "prior (HUD SPM-aligned)",            confidence: med}
+  - {from: chronic_unsheltered, to: exited_positive,      rate: 0.010, source: "prior (PSH inventory-informed)",     confidence: low}
+  - {from: housed_stable,       to: at_risk,              rate: 0.0019, source: "balanced to SPM M5 inflow (stationary at_risk)", confidence: low}
+  - {from: exited_positive,     to: at_risk,              rate: 0.013, source: "HUD SPM 2023 M2 (7.5% 6-mo returns)", confidence: med}
+# Face validity: seeded with real 2023 PIT and run 12 months on these rates, the
+# model brackets the observed 2024 PIT total (71,201) within the P10-P90 band
+# (see model/backtest.py / scripts/backtest.py).
+
+# External monthly inflow into the system (new people entering homelessness).
+# CENTRAL value is REAL: HUD SPM 2023 Measure 5 (first-time homeless 29,818/yr / 12).
+# Independently corroborated by the ACS->PIT ML model (predicted ~2,817/mo, ~13% apart).
+inflow:
+  at_risk: 2485                   # source: HUD SPM 2023 Measure 5 (first-time homeless 29,818/yr) | confidence: high
+# Learned predictive band -> the Monte Carlo samples inflow from this, so the
+# uncertainty is model-derived, not hand-set.
+inflow_uncertainty:
+  cv: 0.39                        # coefficient of variation from the ML model's LOO prediction interval
+  source: "ML inflow model (Ridge ACS->PIT, leave-one-CoC-out R^2=0.36); central anchored to HUD SPM M5"
+
+# Per-person MONTHLY public cost by state (2024 $). Cost rises with
+# time-in-state (the compounding "cost of doing nothing" mechanism).
+costs:
+  base_monthly:
+    housed_stable: 0
+    at_risk: 200                  # prevention-eligible services [proxy] | confidence: low
+    sheltered: 2400               # shelter operating + services [proxy, ERT-informed] | confidence: low
+    unsheltered: 2900             # street public cost, lower bound | source: Economic Roundtable "Where We Sleep" (2024$) | confidence: med
+    chronic_unsheltered: 4240     # chronic street public cost: ERT $2,897/mo (2009) x CPI 1.463 -> 2024$ | source: Economic Roundtable | confidence: med
+    exited_positive: 0
+  duration_multiplier_per_year: 0.15   # +15% per year in-state (compounding) | modelling assumption | confidence: low
+
+# Interventions: how $ of annual spend shifts a transition rate.
+# effect_per_million_per_month = additive monthly rate increase per $1M/yr spent.
+# Effect sizes are priors pending causal estimation (difference-in-differences
+# across CoCs) — tagged low; listed as a limitation.
+interventions:
+  prevention:                                # ~$5k/household prevented
+    target: {from: at_risk, to: housed_stable}
+    effect_per_million_per_month: 0.00018
+    confidence: low
+  rapid_rehousing:                           # ~$12k/household re-housed
+    target: {from: sheltered, to: exited_positive}
+    effect_per_million_per_month: 0.00030
+    confidence: low
+  permanent_supportive_housing:              # ~$25k/person/yr supportive housing
+    target: {from: chronic_unsheltered, to: exited_positive}
+    effect_per_million_per_month: 0.00014
+    confidence: low

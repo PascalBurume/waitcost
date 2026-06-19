@@ -1,0 +1,31 @@
+# Root .dockerignore — for the single-service Hugging Face image (./Dockerfile).
+# NOTE: frontend/ SOURCE is intentionally kept (stage 1 builds it); only its deps
+# and local build output are excluded. The lean compose backend has its own
+# Dockerfile.backend.dockerignore.
+.git/
+.gitignore
+.venv/
+venv/
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+
+# frontend deps + local build (npm ci + vite build run fresh inside the image)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/tsconfig.tsbuildinfo
+
+# not served at runtime → keep the image small
+app/
+notebooks/
+design/
+eval/
+skills/
+
+# large ephemeral audit log + run artifacts (recreated at runtime on the Space)
+MEMORY.md
+outputs/
+
+# the alternate (server + Gemma) deploy files
+docker-compose.yml

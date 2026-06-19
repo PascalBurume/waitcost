@@ -1,0 +1,156 @@
+<svg viewBox="0 0 1340 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ti de">
+<title id="ti">coc_panel.csv — schema and how each column is filled</title>
+<desc id="de">The panel CSV schema: keys and provenance, the HUD target columns, and the Census feature columns, with the source and script that fills each group, and the downstream model.</desc>
+<style>
+  .t{font:600 23px system-ui,-apple-system,sans-serif; fill:#1c1b16}
+  .sub{font:400 13.5px system-ui,sans-serif; fill:#56534b}
+  .hd{font:700 11px system-ui,sans-serif; fill:#1A56DB; letter-spacing:.1em}
+  .src{font:700 13.5px system-ui,sans-serif; fill:#1c1b16}
+  .ss{font:400 11px system-ui,sans-serif; fill:#56534b}
+  .fills{font:600 10.5px system-ui,sans-serif; fill:#1c1b16}
+  .gh{font:700 12px system-ui,sans-serif; fill:#1c1b16}
+  .col{font:600 13px ui-monospace,monospace; fill:#1c1b16}
+  .ty{font:400 11px system-ui,sans-serif; fill:#56534b}
+  .var{font:600 10.5px ui-monospace,monospace; fill:#7a766c}
+  .cap{font:700 14px ui-monospace,monospace; fill:#1c1b16}
+  .note{font:400 11.5px system-ui,sans-serif; fill:#56534b}
+</style>
+<defs>
+  <marker id="ah" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#9b968a"/></marker>
+  <marker id="ab" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#1A56DB"/></marker>
+</defs>
+
+<rect x="0" y="0" width="1340" height="800" fill="#FAFAF7"/>
+<text class="t" x="36" y="42">coc_panel.csv — schema &amp; how each column is filled</text>
+<text class="sub" x="36" y="67">Grain: one row = one Continuum of Care (CoC) region per year · 17 rows. Two halves — HUD counts + Census features — joined on the region↔county crosswalk.</text>
+
+<text class="hd" x="36"  y="104">WHAT FILLS IT</text>
+<text class="hd" x="392" y="104">THE TABLE (16 COLUMNS)</text>
+<text class="hd" x="980" y="104">WHAT USES IT</text>
+
+<!-- ===== LEFT: SOURCES ===== -->
+<!-- crosswalk -->
+<rect x="36" y="120" width="300" height="134" rx="11" style="fill:#ffffff;stroke:#d9d5c9;stroke-width:1.3"/>
+<rect x="36" y="120" width="7" height="134" rx="3.5" style="fill:#9b968a"/>
+<text class="src" x="58" y="148">Team crosswalk</text>
+<text class="ss" x="58" y="168">CoC → principal county (FIPS)</text>
+<text class="ss" x="58" y="185">+ land area (Census Gazetteer)</text>
+<text class="fills" x="58" y="212">Fills: geo_acs — the join key</text>
+<text class="ss" x="58" y="234">single-county CoCs only</text>
+
+<!-- HUD PIT -->
+<rect x="36" y="274" width="300" height="134" rx="11" style="fill:#ffffff;stroke:#d9d5c9;stroke-width:1.3"/>
+<rect x="36" y="274" width="7" height="134" rx="3.5" style="fill:#1A56DB"/>
+<text class="src" x="58" y="302">HUD — PIT count PDFs</text>
+<text class="ss" x="58" y="322">2024 PopSub report, per city</text>
+<text class="ss" x="58" y="339">read by hand from the table</text>
+<text class="fills" x="58" y="366">Fills: pit_* (the TARGET)</text>
+<text class="ss" x="58" y="388">total · sheltered · unshelt. · chronic</text>
+
+<!-- Census ACS -->
+<rect x="36" y="428" width="300" height="134" rx="11" style="fill:#ffffff;stroke:#d9d5c9;stroke-width:1.3"/>
+<rect x="36" y="428" width="7" height="134" rx="3.5" style="fill:#1a7f50"/>
+<text class="src" x="58" y="456">U.S. Census — ACS API</text>
+<text class="ss" x="58" y="476">scripts/fetch_acs.py · 7 vars</text>
+<text class="ss" x="58" y="493">per county FIPS · verified</text>
+<text class="fills" x="58" y="520">Fills: economic FEATURES</text>
+<text class="ss" x="58" y="542">income · poverty · home value …</text>
+
+<!-- Derived -->
+<rect x="36" y="582" width="300" height="134" rx="11" style="fill:#ffffff;stroke:#d9d5c9;stroke-width:1.3"/>
+<rect x="36" y="582" width="7" height="134" rx="3.5" style="fill:#b45309"/>
+<text class="src" x="58" y="610">Computed in code</text>
+<text class="ss" x="58" y="630">from ACS vars + land area</text>
+<text class="fills" x="58" y="658">Fills: poverty_rate,</text>
+<text class="fills" x="58" y="676">pop_density_sqmi</text>
+<text class="ss" x="58" y="698">(ratios, not raw downloads)</text>
+
+<!-- arrows source -> table -->
+<g stroke="#9b968a" stroke-width="1.6" fill="none">
+  <path d="M336,187 L386,266" marker-end="url(#ah)"/>
+  <path d="M336,341 L386,420" marker-end="url(#ah)"/>
+  <path d="M336,495 L386,600" marker-end="url(#ah)"/>
+  <path d="M336,649 L386,672" marker-end="url(#ah)"/>
+</g>
+
+<!-- ===== CENTER: SCHEMA TABLE ===== -->
+<rect x="380" y="116" width="558" height="612" rx="13" style="fill:#ffffff;stroke:#b8b3a6;stroke-width:1.4"/>
+<rect x="380" y="116" width="558" height="42" rx="13" style="fill:#eef2fb;stroke:#b8b3a6;stroke-width:1.4"/>
+<rect x="380" y="140" width="558" height="18" style="fill:#eef2fb"/>
+<text class="cap" x="400" y="144">coc_panel.csv</text>
+<text class="ty" x="540" y="144">17 rows · 16 columns</text>
+
+<!-- group bands -->
+<rect x="392" y="198" width="534" height="142" rx="7" style="fill:#f3f1ea"/>
+<rect x="392" y="366" width="534" height="110" rx="7" style="fill:#eef2fb"/>
+<rect x="392" y="506" width="534" height="194" rx="7" style="fill:#edf6f0"/>
+
+<!-- Group A header -->
+<rect x="400" y="174" width="11" height="11" rx="2" style="fill:#9b968a"/>
+<text class="gh" x="418" y="184">KEYS &amp; PROVENANCE</text>
+<g>
+  <text class="col" x="408" y="216">coc</text><text class="ty" x="610" y="216">string</text><text class="var" x="770" y="216">primary key</text>
+  <text class="col" x="408" y="244">coc_name</text><text class="ty" x="610" y="244">string</text>
+  <text class="col" x="408" y="272">geo_acs</text><text class="ty" x="610" y="272">string</text><text class="var" x="770" y="272">join key → county</text>
+  <text class="col" x="408" y="300">pit_year</text><text class="ty" x="610" y="300">int</text><text class="var" x="770" y="300">year</text>
+  <text class="col" x="408" y="328">acs_release</text><text class="ty" x="610" y="328">string</text><text class="var" x="770" y="328">provenance tag</text>
+</g>
+
+<!-- Group B header -->
+<rect x="400" y="350" width="11" height="11" rx="2" style="fill:#1A56DB"/>
+<text class="gh" x="418" y="360">TARGET — HUD PIT counts (what the model predicts)</text>
+<g>
+  <text class="col" x="408" y="392">pit_total</text><text class="ty" x="610" y="392">int · persons</text><text class="var" x="770" y="392">total homeless</text>
+  <text class="col" x="408" y="420">pit_sheltered</text><text class="ty" x="610" y="420">int · persons</text><text class="var" x="770" y="420">ES + TH</text>
+  <text class="col" x="408" y="448">pit_unsheltered</text><text class="ty" x="610" y="448">int · persons</text>
+  <text class="col" x="408" y="476">pit_chronic</text><text class="ty" x="610" y="476">int · persons</text><text class="var" x="770" y="476">chronically homeless</text>
+</g>
+
+<!-- Group C header -->
+<rect x="400" y="490" width="11" height="11" rx="2" style="fill:#1a7f50"/>
+<text class="gh" x="418" y="500">FEATURES — Census ACS (the predictors)</text>
+<g>
+  <text class="col" x="408" y="524">population</text><text class="ty" x="640" y="524">int</text><text class="var" x="770" y="524">B01003_001E</text>
+  <text class="col" x="408" y="552">per_capita_income</text><text class="ty" x="640" y="552">int · $</text><text class="var" x="770" y="552">B19301_001E</text>
+  <text class="col" x="408" y="580">median_household_income</text><text class="ty" x="640" y="580">int · $</text><text class="var" x="770" y="580">B19013_001E</text>
+  <text class="col" x="408" y="608">poverty_rate</text><text class="ty" x="640" y="608">float · %</text><text class="var" x="770" y="608">derived</text>
+  <text class="col" x="408" y="636">median_home_value</text><text class="ty" x="640" y="636">int · $</text><text class="var" x="770" y="636">B25077_001E ★</text>
+  <text class="col" x="408" y="664">persons_per_household</text><text class="ty" x="640" y="664">float</text><text class="var" x="770" y="664">B25010_001E</text>
+  <text class="col" x="408" y="692">pop_density_sqmi</text><text class="ty" x="640" y="692">float</text><text class="var" x="770" y="692">derived</text>
+</g>
+
+<!-- arrows table -> downstream -->
+<g stroke="#1A56DB" stroke-width="1.8" fill="none">
+  <path d="M938,300 L974,300" marker-end="url(#ab)"/>
+</g>
+
+<!-- ===== RIGHT: DOWNSTREAM ===== -->
+<rect x="980" y="158" width="324" height="84" rx="11" style="fill:#ffffff;stroke:#b8b3a6;stroke-width:1.3"/>
+<text class="cap" x="1002" y="188" font-size="13">scripts/train_inflow.py</text>
+<text class="ss" x="1002" y="210">reads this CSV</text>
+<text class="ss" x="1002" y="228">features (Census) → target (HUD)</text>
+
+<g stroke="#9b968a" stroke-width="1.8" fill="none"><path d="M1142,242 L1142,282" marker-end="url(#ah)"/></g>
+
+<rect x="980" y="282" width="324" height="92" rx="11" style="fill:#f4f6fb;stroke:#1A56DB;stroke-width:1.3"/>
+<text class="src" x="1002" y="312">Ridge model</text>
+<text class="ss" x="1002" y="334">predicts homelessness inflow from</text>
+<text class="ss" x="1002" y="352">a city's economic signals</text>
+
+<g stroke="#9b968a" stroke-width="1.8" fill="none"><path d="M1142,374 L1142,414" marker-end="url(#ah)"/></g>
+
+<rect x="980" y="414" width="324" height="92" rx="11" style="fill:#edf6f0;stroke:#1a7f50;stroke-width:1.3"/>
+<text class="src" x="1002" y="444">SHAP explainability</text>
+<text class="ss" x="1002" y="466">★ median_home_value =</text>
+<text class="ss" x="1002" y="484">the dominant driver</text>
+
+<rect x="980" y="540" width="324" height="96" rx="11" style="fill:#fbf7ef;stroke:#d9d5c9;stroke-width:1.2"/>
+<text class="gh" x="1002" y="566" font-size="11">DERIVED AT MODEL TIME (not stored)</text>
+<text class="var" x="1002" y="590" style="font:600 11px ui-monospace,monospace;fill:#56534b">homeless_rate_per_1k =</text>
+<text class="var" x="1002" y="608" style="font:600 11px ui-monospace,monospace;fill:#56534b">pit_total ÷ population × 1000</text>
+<text class="ss" x="1002" y="628">kept out of the CSV to keep it source-only</text>
+
+<!-- footer -->
+<line x1="36" y1="752" x2="1304" y2="752" stroke="#e2ddd0" stroke-width="1"/>
+<text class="note" x="36" y="776">Two halves, one key: HUD counts (read by hand) + Census features (pulled from the API), joined on the CoC↔county crosswalk. A re-fetch verified 0 of 119 values differed ≥5%.</text>
+</svg>

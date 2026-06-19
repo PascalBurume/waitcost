@@ -1,0 +1,11 @@
+{
+  "name": "waitcost-marketplace",
+  "owner": {"name": "WaitCost"},
+  "plugins": [
+    {
+      "name": "waitcost",
+      "source": "./",
+      "description": "WaitCost cost-of-inaction analyst — an offline, deterministic homelessness budget-timing simulator packaged as an installable Agent Skill (SKILL.md + bundled CLI over the engine)."
+    }
+  ]
+}

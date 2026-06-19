@@ -1,0 +1,16 @@
+# Per-Dockerfile ignore for Dockerfile.backend (the compose/server image).
+# Keeps the backend image small — the frontend is built separately (frontend/Dockerfile).
+frontend/
+notebooks/
+design/
+eval/
+app/
+.venv/
+venv/
+**/__pycache__/
+**/*.pyc
+.git/
+.gitignore
+.pytest_cache/
+*.md
+outputs/

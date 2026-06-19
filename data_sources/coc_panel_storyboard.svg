@@ -1,0 +1,105 @@
+<svg viewBox="0 0 1300 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ti de">
+<title id="ti">How the city data was collected — 6 simple steps</title>
+<desc id="de">A six-panel storyboard: set the goal, copy homeless counts by hand from HUD PDFs, build a region-to-county address book, fetch economic facts automatically from the Census, calculate a couple of columns, then verify and hand off to the model.</desc>
+<style>
+  .t{font:600 24px system-ui,-apple-system,sans-serif; fill:#1c1b16}
+  .sub{font:400 14px system-ui,sans-serif; fill:#56534b}
+  .pt{font:700 17px system-ui,sans-serif; fill:#1c1b16}
+  .pl{font:400 12.5px system-ui,sans-serif; fill:#56534b}
+  .num{font:700 18px system-ui,sans-serif; fill:#ffffff}
+  .note{font:400 12px system-ui,sans-serif; fill:#56534b}
+</style>
+<defs>
+  <marker id="ar" markerWidth="11" markerHeight="11" refX="8" refY="3.2" orient="auto"><path d="M0,0 L8,3.2 L0,6.4 z" fill="#9b968a"/></marker>
+</defs>
+
+<rect x="0" y="0" width="1300" height="720" fill="#FAFAF7"/>
+<text class="t" x="36" y="46">How we collected the city data — in 6 simple steps</text>
+<text class="sub" x="36" y="72">One table, one row per city. The counts are copied by hand; the economics are fetched automatically; a lookup list joins them.</text>
+
+<!-- ============ ROW 1 ============ -->
+<!-- Panel 1 -->
+<rect x="36" y="110" width="380" height="250" rx="14" style="fill:#ffffff;stroke:#d9d5c9;stroke-width:1.3"/>
+<circle cx="70" cy="146" r="18" style="fill:#1A56DB"/><text class="num" x="70" y="152" text-anchor="middle">1</text>
+<g transform="translate(330,128)" style="fill:none;stroke:#1A56DB;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round">
+  <rect x="-22" y="-16" width="44" height="34" rx="3"/><path d="M-22,-5 L22,-5 M-8,-16 L-8,18 M8,-16 L8,18"/>
+</g>
+<text class="pt" x="60" y="200">Start with the goal</text>
+<text class="pl" x="60" y="226">Build one table — one row per city. Each</text>
+<text class="pl" x="60" y="246">row needs two things: how many homeless</text>
+<text class="pl" x="60" y="266">people there are, and what the city's</text>
+<text class="pl" x="60" y="286">economy looks like.</text>
+
+<!-- Panel 2 -->
+<rect x="446" y="110" width="380" height="250" rx="14" style="fill:#ffffff;stroke:#d9d5c9;stroke-width:1.3"/>
+<circle cx="480" cy="146" r="18" style="fill:#1A56DB"/><text class="num" x="480" y="152" text-anchor="middle">2</text>
+<g transform="translate(742,128)" style="fill:none;stroke:#1A56DB;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round">
+  <path d="M-15,-20 L8,-20 L18,-10 L18,20 L-15,20 Z"/><path d="M8,-20 L8,-10 L18,-10"/><path d="M-8,-2 L11,-2 M-8,7 L11,7"/>
+</g>
+<text class="pt" x="470" y="200">Copy the counts by hand</text>
+<text class="pl" x="470" y="226">Open each city's official HUD report</text>
+<text class="pl" x="470" y="246">(a PDF) and type in four numbers: total,</text>
+<text class="pl" x="470" y="266">sheltered, unsheltered, and long-term</text>
+<text class="pl" x="470" y="286">("chronic").</text>
+
+<!-- Panel 3 -->
+<rect x="856" y="110" width="380" height="250" rx="14" style="fill:#ffffff;stroke:#d9d5c9;stroke-width:1.3"/>
+<circle cx="890" cy="146" r="18" style="fill:#9b968a"/><text class="num" x="890" y="152" text-anchor="middle">3</text>
+<g transform="translate(1150,130)" style="fill:none;stroke:#9b968a;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round">
+  <circle cx="-16" cy="0" r="8"/><circle cx="16" cy="0" r="8"/><path d="M-8,0 L8,0"/>
+</g>
+<text class="pt" x="880" y="200">Build an "address book"</text>
+<text class="pl" x="880" y="226">HUD calls LA "CA-600"; the Census calls</text>
+<text class="pl" x="880" y="246">it "Los Angeles County." Make a list</text>
+<text class="pl" x="880" y="266">linking the two, so the datasets can</text>
+<text class="pl" x="880" y="286">find each other.</text>
+
+<!-- ============ ROW 2 ============ -->
+<!-- Panel 4 -->
+<rect x="856" y="400" width="380" height="250" rx="14" style="fill:#ffffff;stroke:#d9d5c9;stroke-width:1.3"/>
+<circle cx="890" cy="436" r="18" style="fill:#1a7f50"/><text class="num" x="890" y="442" text-anchor="middle">4</text>
+<g transform="translate(1150,420)" style="fill:none;stroke:#1a7f50;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round">
+  <path d="M-16,4 a10,10 0 0,1 1,-19 a13,13 0 0,1 25,2 a8,8 0 0,1 -2,17 Z"/><path d="M0,2 L0,16 M-6,10 L0,16 L6,10"/>
+</g>
+<text class="pt" x="880" y="490">Fetch the economics — automatically</text>
+<text class="pl" x="880" y="516">A small program asks the free Census</text>
+<text class="pl" x="880" y="536">website for 7 facts per county: income,</text>
+<text class="pl" x="880" y="556">poverty, home value, and more.</text>
+<text class="pl" x="880" y="576">No typing involved.</text>
+
+<!-- Panel 5 -->
+<rect x="446" y="400" width="380" height="250" rx="14" style="fill:#ffffff;stroke:#d9d5c9;stroke-width:1.3"/>
+<circle cx="480" cy="436" r="18" style="fill:#b45309"/><text class="num" x="480" y="442" text-anchor="middle">5</text>
+<g transform="translate(742,420)" style="fill:none;stroke:#b45309;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round">
+  <rect x="-16" y="-20" width="32" height="40" rx="4"/><path d="M-9,-11 L9,-11"/><circle cx="-7" cy="2" r="0.6"/><circle cx="0" cy="2" r="0.6"/><circle cx="7" cy="2" r="0.6"/><circle cx="-7" cy="11" r="0.6"/><circle cx="0" cy="11" r="0.6"/><circle cx="7" cy="11" r="0.6"/>
+</g>
+<text class="pt" x="470" y="490">Do a little math</text>
+<text class="pl" x="470" y="516">A few columns are calculated, not</text>
+<text class="pl" x="470" y="536">downloaded — like poverty rate</text>
+<text class="pl" x="470" y="556">(poor ÷ people) and density</text>
+<text class="pl" x="470" y="576">(people ÷ land area).</text>
+
+<!-- Panel 6 -->
+<rect x="36" y="400" width="380" height="250" rx="14" style="fill:#ffffff;stroke:#d9d5c9;stroke-width:1.3"/>
+<circle cx="70" cy="436" r="18" style="fill:#1a7f50"/><text class="num" x="70" y="442" text-anchor="middle">6</text>
+<g transform="translate(330,420)" style="fill:none;stroke:#1a7f50;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round">
+  <circle cx="0" cy="0" r="20"/><path d="M-9,1 L-3,8 L10,-7"/>
+</g>
+<text class="pt" x="60" y="490">Double-check, then hand off</text>
+<text class="pl" x="60" y="516">Run it again to verify — 0 of 119</text>
+<text class="pl" x="60" y="536">numbers were off by more than 5%.</text>
+<text class="pl" x="60" y="556">The finished table then feeds the</text>
+<text class="pl" x="60" y="576">prediction model.</text>
+
+<!-- arrows -->
+<g stroke="#9b968a" stroke-width="2" fill="none">
+  <path d="M416,235 L446,235" marker-end="url(#ar)"/>
+  <path d="M826,235 L856,235" marker-end="url(#ar)"/>
+  <path d="M1046,360 L1046,400" marker-end="url(#ar)"/>
+  <path d="M856,525 L826,525" marker-end="url(#ar)"/>
+  <path d="M446,525 L416,525" marker-end="url(#ar)"/>
+</g>
+
+<line x1="36" y1="680" x2="1264" y2="680" stroke="#e2ddd0" stroke-width="1"/>
+<text class="note" x="36" y="703">In one line: counts copied off official PDFs by hand · economics fetched from the Census automatically · a city↔county list snaps them into one verified table.</text>
+</svg>

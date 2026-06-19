@@ -1,0 +1,76 @@
+<svg viewBox="0 0 940 770" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ti de">
+<title id="ti">How WaitCost answers a question — the AI pipeline</title>
+<desc id="de">Your question goes to Gemma (offline) which understands it and picks a tool; the Python sandbox does the maths with the simulator, ML inflow model, US-data retrieval and metrics; Gemma then explains the result in plain English; the answer and decision brief come out with every number from code; recommending spend is Tier-2 and pauses for a human.</desc>
+<style>
+  .t{font:600 22px system-ui,-apple-system,sans-serif; fill:#1c1b16}
+  .sub{font:400 13.5px system-ui,sans-serif; fill:#56534b}
+  .bt{font:700 15px system-ui,sans-serif; fill:#1c1b16}
+  .bs{font:400 12px system-ui,sans-serif; fill:#56534b}
+  .gt{font:700 14px system-ui,sans-serif; fill:#1a7f50}
+  .gs{font:400 11.5px system-ui,sans-serif; fill:#3a7a5f}
+  .pt{font:700 15px system-ui,sans-serif; fill:#4338CA}
+  .ps{font:400 12px system-ui,sans-serif; fill:#5B4FC4}
+  .amb{font:700 13px system-ui,sans-serif; fill:#9A5B16}
+  .lab{font:700 11px system-ui,sans-serif; fill:#56534b}
+  .leg{font:400 12px system-ui,sans-serif; fill:#56534b}
+</style>
+<defs>
+  <marker id="ar" markerWidth="11" markerHeight="11" refX="8" refY="3.2" orient="auto"><path d="M0,0 L8,3.2 L0,6.4 z" fill="#9b968a"/></marker>
+</defs>
+
+<rect x="0" y="0" width="940" height="770" fill="#FAFAF7"/>
+<text class="t" x="36" y="40">How WaitCost answers a question</text>
+<text class="sub" x="36" y="62">The AI handles language; trusted Python code owns every number; the biggest decision pauses for a human.</text>
+
+<!-- Q -->
+<rect x="368" y="86" width="204" height="58" rx="9" style="fill:#F0EDE6;stroke:#C9C3B5;stroke-width:1.3"/>
+<text class="bt" x="470" y="112" text-anchor="middle">Your question</text>
+<text class="bs" x="470" y="130" text-anchor="middle">any of 8 types</text>
+
+<path d="M470,144 L470,176" stroke="#9b968a" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+
+<!-- Gemma brain -->
+<rect x="326" y="178" width="288" height="64" rx="9" style="fill:#ECE9FB;stroke:#7C6FD6;stroke-width:1.5"/>
+<text class="pt" x="470" y="206" text-anchor="middle">Gemma · offline (the brain)</text>
+<text class="ps" x="470" y="226" text-anchor="middle">understand + pick a tool</text>
+
+<path d="M470,242 L470,272" stroke="#9b968a" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+
+<!-- sandbox -->
+<rect x="30" y="274" width="880" height="118" rx="11" style="fill:#ffffff;stroke:#D9D5C9;stroke-width:1.3"/>
+<text class="lab" x="46" y="296">TOOL REGISTRY · PYTHON SANDBOX — DOES THE MATHS</text>
+<rect x="46"  y="306" width="200" height="68" rx="9" style="fill:#E7F3EC;stroke:#2E8B6F;stroke-width:1.3"/>
+<text class="gt" x="146" y="336" text-anchor="middle">Simulator</text><text class="gs" x="146" y="356" text-anchor="middle">flows + Monte Carlo</text>
+<rect x="262" y="306" width="200" height="68" rx="9" style="fill:#E7F3EC;stroke:#2E8B6F;stroke-width:1.3"/>
+<text class="gt" x="362" y="336" text-anchor="middle">ML inflow model</text><text class="gs" x="362" y="356" text-anchor="middle">ACS → PIT, SHAP</text>
+<rect x="478" y="306" width="200" height="68" rx="9" style="fill:#E7F3EC;stroke:#2E8B6F;stroke-width:1.3"/>
+<text class="gt" x="578" y="336" text-anchor="middle">Retrieve US data</text><text class="gs" x="578" y="356" text-anchor="middle">real public indicators</text>
+<rect x="694" y="306" width="200" height="68" rx="9" style="fill:#E7F3EC;stroke:#2E8B6F;stroke-width:1.3"/>
+<text class="gt" x="794" y="336" text-anchor="middle">Compare &amp; metrics</text><text class="gs" x="794" y="356" text-anchor="middle">budgets, mix, break-even</text>
+
+<path d="M470,392 L470,422" stroke="#9b968a" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+
+<!-- Gemma voice -->
+<rect x="326" y="424" width="288" height="64" rx="9" style="fill:#ECE9FB;stroke:#7C6FD6;stroke-width:1.5"/>
+<text class="pt" x="470" y="452" text-anchor="middle">Gemma · offline (the voice)</text>
+<text class="ps" x="470" y="472" text-anchor="middle">explain in plain English</text>
+
+<path d="M470,488 L470,518" stroke="#9b968a" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+
+<!-- Answer -->
+<rect x="326" y="520" width="288" height="64" rx="9" style="fill:#F0EDE6;stroke:#C9C3B5;stroke-width:1.3"/>
+<text class="bt" x="470" y="548" text-anchor="middle">Answer + decision brief</text>
+<text class="bs" x="470" y="568" text-anchor="middle">every number comes from code</text>
+
+<!-- Tier 2 -->
+<rect x="300" y="612" width="340" height="44" rx="9" style="fill:#FBEEDD;stroke:#C2772A;stroke-width:1.4"/>
+<text class="amb" x="470" y="639" text-anchor="middle">Tier-2 (recommend spend) pauses for a human</text>
+
+<!-- legend -->
+<rect x="250" y="706" width="16" height="16" rx="3" style="fill:#ECE9FB;stroke:#7C6FD6;stroke-width:1.2"/>
+<text class="leg" x="274" y="719">offline AI (Gemma)</text>
+<rect x="430" y="706" width="16" height="16" rx="3" style="fill:#E7F3EC;stroke:#2E8B6F;stroke-width:1.2"/>
+<text class="leg" x="454" y="719">Python sandbox</text>
+<rect x="590" y="706" width="16" height="16" rx="3" style="fill:#F0EDE6;stroke:#C9C3B5;stroke-width:1.2"/>
+<text class="leg" x="614" y="719">in / out</text>
+</svg>

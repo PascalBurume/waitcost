@@ -1,0 +1,270 @@
+{
+  "_meta": {
+    "purpose": "Curated source registry for the CityBriefAgent: per-CoC lead agency, current strategic/care plan, and situation context, with real citations. Grounds general-knowledge answers about each city's homelessness situation and response strategy. Population-level / system-level only — never individual data.",
+    "last_checked": "2026-06-16",
+    "verification_note": "Every URL below was surfaced by a live web search on 2026-06-16. Items flagged \"verify\": true should be re-confirmed before the demo (the named plan exists, but the canonical link may have moved). Counts come from this repo's data/coc_panel.csv (HUD 2024 PIT) unless noted.",
+    "usage_rule": "The agent must cite the source(s) it used and must not state a figure or claim not traceable to a listed source or the project's own data files."
+  },
+  "national_frameworks": [
+    {
+      "title": "All In: The Federal Strategic Plan to Prevent and End Homelessness (USICH)",
+      "publisher": "U.S. Interagency Council on Homelessness",
+      "url": "https://www.usich.gov/federal-strategic-plan/overview",
+      "executive_summary_url": "https://www.usich.gov/federal-strategic-plan/executive-summary",
+      "note": "Federal blueprint: 6 pillars, ~30 strategies, ~180 actions; Housing First; short-term goal to reduce homelessness 25% by 2025; explicit equity / systemic-racism focus. The framing most local plans align to."
+    },
+    {
+      "title": "HUD Continuum of Care (CoC) Program",
+      "publisher": "U.S. Department of Housing and Urban Development",
+      "url": "https://www.hud.gov/program_offices/comm_planning/coc",
+      "note": "The federal program that funds and structures every local CoC referenced below; defines the annual PIT count, CoC governance, and McKinney-Vento funding."
+    }
+  ],
+  "cities": [
+    {
+      "coc": "CA-600",
+      "city": "Los Angeles",
+      "coc_name": "Los Angeles City & County CoC",
+      "lead_agency": "Los Angeles Homeless Services Authority (LAHSA)",
+      "plan_title": "LAHSA Strategic Vision / LA CoC (incl. LA County Homeless Initiative)",
+      "plan_url": "https://www.lahsa.org/",
+      "key_sources": [
+        {"title": "LAHSA — Los Angeles Homeless Services Authority", "url": "https://www.lahsa.org/"},
+        {"title": "LAHSA Data Refresh (counts & dashboards)", "url": "https://www.lahsa.org/data-refresh"},
+        {"title": "LA County Homeless Initiative", "url": "https://homeless.lacounty.gov/"}
+      ],
+      "situation_note": "Largest CoC in the panel; ~71,201 people homeless in the 2024 PIT, majority unsheltered. Strategy emphasizes a redesigned Coordinated Entry System, Time-Limited Subsidies, and unsheltered-focused funding (incl. a $60M HUD award).",
+      "verify": false
+    },
+    {
+      "coc": "CA-503",
+      "city": "Sacramento",
+      "coc_name": "Sacramento City & County CoC",
+      "lead_agency": "Sacramento Steps Forward (CoC lead)",
+      "plan_title": "Sacramento Local Homeless Action Plan (LHAP) + 'All In' Regionally Coordinated Homeless Action Plan (RCHAP)",
+      "plan_url": "https://www.sacramentostepsforward.org/plans-and-funds/plan-to-address-homelessness-in-sacramento/",
+      "key_sources": [
+        {"title": "Plan to Address Homelessness in Sacramento — Sacramento Steps Forward", "url": "https://www.sacramentostepsforward.org/plans-and-funds/plan-to-address-homelessness-in-sacramento/"},
+        {"title": "All In: Regional Coordinated Homeless Action Plan (PDF)", "url": "https://schs.saccounty.gov/Documents/All%20In%20Sacramento%20Plan%202024-03-06.pdf"}
+      ],
+      "situation_note": "Three-year LHAP (2022–2025) plus a 2024 regionally coordinated plan (RCHAP, 'All In') across city, county, CoC, and SHRA; community-wide response system standards published Dec 2023.",
+      "verify": false
+    },
+    {
+      "coc": "AZ-501",
+      "city": "Tucson",
+      "coc_name": "Tucson/Pima County CoC",
+      "lead_agency": "Tucson Pima Collaboration to End Homelessness (TPCH)",
+      "plan_title": "TPCH Strategic Plan 2026–2030 + 'Bringing Pima Home' Community Plan",
+      "plan_url": "https://tpch.net/about/",
+      "key_sources": [
+        {"title": "About TPCH", "url": "https://tpch.net/about/"},
+        {"title": "Bringing Pima Home — 2023 Update to the Community Plan (PDF)", "url": "https://tpch.net/wp-content/uploads/0_TPCH-2023-Update-to-the-Community-Plan-to-Prevent-and-End-Homelessness-in-Tucson-and-Throughout-Pima-County.pdf"},
+        {"title": "City of Tucson — TPCH 5-year strategic plan", "url": "https://www.tucsonaz.gov/Departments/Housing-and-Community-Development/HCD-News/TPCH-Drafting-5-year-Strategic-Plan"}
+      ],
+      "situation_note": "TPCH coordinates the CoC (does not deliver direct services). A new 2026–2030 strategic plan was adopted; the 'Bringing Pima Home' community plan organizes prevention, housing, and supportive-services strategy.",
+      "verify": false
+    },
+    {
+      "coc": "CA-601",
+      "city": "San Diego",
+      "coc_name": "San Diego City and County CoC",
+      "lead_agency": "Regional Task Force on Homelessness (RTFH)",
+      "plan_title": "Regional Community Action Plan to Prevent and End Homelessness ('Plan of Plans')",
+      "plan_url": "https://www.rtfhsd.org/",
+      "key_sources": [
+        {"title": "Regional Task Force on Homelessness (RTFH)", "url": "https://www.rtfhsd.org/"},
+        {"title": "Community Action Plan on Homelessness for the City of San Diego — SDHC", "url": "https://sdhc.org/homelessness-solutions/community-action-plan/"}
+      ],
+      "situation_note": "RTFH's regional action plan is a five-year 'Plan of Plans' integrating federal/state/local plans; goals include ending veteran/youth/family/senior homelessness and halving unsheltered homelessness; identifies a need for ~9,000+ units and added shelter beds.",
+      "verify": false
+    },
+    {
+      "coc": "CA-501",
+      "city": "San Francisco",
+      "coc_name": "San Francisco CoC",
+      "lead_agency": "SF Department of Homelessness and Supportive Housing (HSH)",
+      "plan_title": "Home by the Bay: Citywide Strategic Plan 2023–2028",
+      "plan_url": "https://www.sf.gov/home-bay",
+      "key_sources": [
+        {"title": "Home by the Bay — SF.gov", "url": "https://www.sf.gov/home-bay"},
+        {"title": "Home by the Bay 2023–2028 (full plan PDF)", "url": "https://hsh.archive.sf.gov/wp-content/uploads/2023/05/Home-by-the-Bay-FINAL.pdf"},
+        {"title": "Home by the Bay: Year One Progress Report (Oct 2024)", "url": "https://www.sf.gov/reports--october-2024--home-bay-year-one-progress-report"}
+      ],
+      "situation_note": "Equity-driven 5-year plan with five goals (e.g. 30,000 moves to permanent housing; 85% non-return; prevention for 18,000). Year-one: 5,256 people moved to housing; 83% did not return within 24 months.",
+      "verify": false
+    },
+    {
+      "coc": "WA-500",
+      "city": "Seattle",
+      "coc_name": "Seattle/King County CoC",
+      "lead_agency": "King County Regional Homelessness Authority (KCRHA)",
+      "plan_title": "KCRHA Five-Year Plan (2023–2028, addendum extending to 2029)",
+      "plan_url": "https://kcrha.org/about/kcrha-5-year-plan/",
+      "key_sources": [
+        {"title": "KCRHA 5-Year Plan", "url": "https://kcrha.org/about/kcrha-5-year-plan/"},
+        {"title": "Final KCRHA Five-Year Plan 2023–2028 (PDF)", "url": "https://kcrha.org/wp-content/uploads/2023/06/FINAL-KCRHA-Five-Year-Plan-6.1.23.pdf"}
+      ],
+      "situation_note": "Six goals incl. expanding temporary/permanent housing, restructuring the service system, reducing the impact of racism, and preventing family/youth homelessness; a 2024 addendum aligns to WA Dept of Commerce requirements and extends to 2029.",
+      "verify": false
+    },
+    {
+      "coc": "AZ-502",
+      "city": "Phoenix",
+      "coc_name": "Phoenix/Mesa/Maricopa County Regional CoC",
+      "lead_agency": "Maricopa Association of Governments (MAG) — Maricopa Regional CoC",
+      "plan_title": "Regional Plan to End Homelessness + 'Pathways Home' regional action plan",
+      "plan_url": "https://azmag.gov/Programs/Homelessness/Continuum-of-Care",
+      "key_sources": [
+        {"title": "Maricopa Regional CoC — MAG", "url": "https://azmag.gov/Programs/Homelessness/Continuum-of-Care"},
+        {"title": "Pathways Home — regional action plan", "url": "https://azmag.gov/Programs/Homelessness/Pathways-Home"},
+        {"title": "Maricopa Regional CoC", "url": "https://maricopacoc.org/"}
+      ],
+      "situation_note": "MAG has staffed the CoC since 1999; >$400M in funding across 30+ programs. Vision: homelessness rare, brief, non-recurring. 'Pathways Home' is the regional action plan to reduce homelessness across Maricopa County.",
+      "verify": false
+    },
+    {
+      "coc": "CA-500",
+      "city": "San Jose",
+      "coc_name": "San Jose/Santa Clara City & County CoC",
+      "lead_agency": "Santa Clara County Office of Supportive Housing (with Destination: Home)",
+      "plan_title": "Community Plan to End Homelessness (2020–2025; 2025–2030 in development)",
+      "plan_url": "https://osh.santaclaracounty.gov/solutions-homelessness/community-plan-end-homelessness",
+      "key_sources": [
+        {"title": "Community Plan to End Homelessness — Office of Supportive Housing", "url": "https://osh.santaclaracounty.gov/solutions-homelessness/community-plan-end-homelessness"},
+        {"title": "Homelessness Response — City of San José", "url": "https://www.sanjoseca.gov/your-government/departments-offices/housing/homelessness-response"},
+        {"title": "Our Community's Supportive Housing System — Destination: Home", "url": "https://destinationhomesv.org/understanding-homelessness/system/"}
+      ],
+      "situation_note": "Three core strategies: address root causes via system/policy change, expand prevention + housing, and improve quality of life for unsheltered residents. ~27,000 obtained temporary housing and ~38,000 received prevention services under the plan.",
+      "verify": false
+    },
+    {
+      "coc": "OR-501",
+      "city": "Portland",
+      "coc_name": "Portland-Gresham-Multnomah County CoC",
+      "lead_agency": "Joint Office of Homeless Services (City of Portland + Multnomah County)",
+      "plan_title": "Homelessness Response Action Plan (HRAP, 2024) + Multnomah Local Implementation Plan",
+      "plan_url": "https://www.multco.us/joint-office-homeless-services",
+      "key_sources": [
+        {"title": "Multnomah County + Portland plan to halve unsheltered homelessness by 2026 — OPB (Mar 2024)", "url": "https://www.opb.org/article/2024/03/11/multnomah-county-portland-present-plan-to-halve-unsheltered-homelessness-by-2026/"},
+        {"title": "Joint Office of Homeless Services audit — Multnomah County", "url": "https://multco.us/info/joint-office-homeless-services-audit"}
+      ],
+      "situation_note": "JOHS (est. 2016) centralizes planning and funding. 2024 HRAP goal: halve unsheltered homelessness by 2026, add shelter beds and affordable housing, expand behavioral-health treatment, and improve data and oversight.",
+      "verify": true
+    },
+    {
+      "coc": "NV-500",
+      "city": "Las Vegas",
+      "coc_name": "Las Vegas/Clark County CoC (Southern Nevada Homelessness CoC)",
+      "lead_agency": "Southern Nevada Homelessness CoC — 'Help Hope Home' (Clark County administers)",
+      "plan_title": "HELP HOPE HOME: Southern Nevada's Regional Plan to End Homelessness",
+      "plan_url": "https://helphopehome.org/continuum-of-care-coc/",
+      "key_sources": [
+        {"title": "Southern Nevada Homelessness CoC — Help Hope Home", "url": "https://helphopehome.org/continuum-of-care-coc/"},
+        {"title": "2024 PIT Count Executive Summary (PDF)", "url": "https://helphopehome.org/wp-content/uploads/2024/09/2024-PIT-Count-Executive-Summary-Final-Report.pdf"}
+      ],
+      "situation_note": "HUD CoC NV-500 covering Clark County; SNHCoC Board develops the 'Help Hope Home' regional plan. ~$25M CoC funding (~$19.5M to permanent supportive housing). 2024 PIT: 7,906 people — +20% over 2023, a decade high. $200M 'Campus for Hope' shelter planned (ops from 2027).",
+      "verify": false
+    },
+    {
+      "coc": "NY-600",
+      "city": "New York City",
+      "coc_name": "New York City CoC",
+      "lead_agency": "NYC Department of Social Services / Department of Homeless Services (DSS-DHS)",
+      "plan_title": "Housing Our Neighbors: A Blueprint for Housing and Homelessness (2022)",
+      "plan_url": "https://www.nyc.gov/site/dhs/index.page",
+      "key_sources": [
+        {"title": "NYC Department of Homeless Services", "url": "https://www.nyc.gov/site/dhs/index.page"},
+        {"title": "DSS announces HOPE 2024 unsheltered estimate", "url": "https://www.nyc.gov/site/dhs/about/press-releases/hope-2024.page"}
+      ],
+      "situation_note": "Largest sheltered system in the country (right-to-shelter); very low unsheltered rate (HOPE 2024 estimated ~4,140 unsheltered). 2022 'Housing Our Neighbors' blueprint sets housing + homelessness strategy; CityFHEPS rental subsidy is a core tool.",
+      "verify": true
+    },
+    {
+      "coc": "DC-500",
+      "city": "Washington, DC",
+      "coc_name": "District of Columbia CoC",
+      "lead_agency": "DC Interagency Council on Homelessness (ICH) + The Community Partnership (TCP)",
+      "plan_title": "Homeward DC 2.0: ICH Strategic Plan FY2021–FY2025",
+      "plan_url": "https://ich.dc.gov/page/homeward-dc-20-ich-strategic-plan-fy2021-fy2025",
+      "key_sources": [
+        {"title": "Homeward DC 2.0 — ICH", "url": "https://ich.dc.gov/page/homeward-dc-20-ich-strategic-plan-fy2021-fy2025"},
+        {"title": "Homeward DC 2.0 Strategic Plan (PDF)", "url": "https://ich.dc.gov/sites/default/files/dc/sites/ich/page_content/attachments/ICH-StratPlan2.9-Web.pdf"}
+      ],
+      "situation_note": "Vision: homelessness rare, brief, non-recurring; 100+ strategies under twelve goals; explicit aim to eliminate racial inequities. Built on HMIS data. Led collaboratively by ICH, TCP, and people with lived experience.",
+      "verify": false
+    },
+    {
+      "coc": "MN-500",
+      "city": "Minneapolis",
+      "coc_name": "Minneapolis/Hennepin County CoC",
+      "lead_agency": "Hennepin County (Office to End Homelessness) — 'Heading Home Hennepin'",
+      "plan_title": "Heading Home Hennepin — CoC plan to prevent and end homelessness",
+      "plan_url": "https://www.hennepin.us/headinghomehennepin",
+      "key_sources": [
+        {"title": "Heading Home Hennepin — Hennepin County", "url": "https://www.hennepin.us/headinghomehennepin"},
+        {"title": "Continuum of Care partnership to end homelessness — Hennepin County", "url": "https://www.hennepincounty.gov/government/projects-initiatives/housing-and-homelessness/continuum-of-care-partnership-to-end-homelessness"}
+      ],
+      "situation_note": "Hennepin County is the HUD collaborative applicant (~$16M/yr to 40+ projects). The Office to End Homelessness (jointly supported by Minneapolis + Hennepin County) coordinates the CoC; strategy emphasizes prevention and protective factors for at-risk residents.",
+      "verify": false
+    },
+    {
+      "coc": "TN-502",
+      "city": "Knoxville",
+      "coc_name": "Knoxville/Knox County CoC",
+      "lead_agency": "Knoxville-Knox County Office of Housing Stability (OHS) + CoC Board",
+      "plan_title": "Knoxville-Knox County Three-Year Plan to Address Homelessness (2025)",
+      "plan_url": "https://www.knoxvilletn.gov/government/city_departments_offices/housing_and_neighborhood_development/office_on_homelessness/knoxville-_knox_county_continuum_of_care_info",
+      "key_sources": [
+        {"title": "Knoxville-Knox County CoC Info — City of Knoxville", "url": "https://www.knoxvilletn.gov/government/city_departments_offices/housing_and_neighborhood_development/office_on_homelessness/knoxville-_knox_county_continuum_of_care_info"},
+        {"title": "Office of Housing Stability unveils 3-year plan (WVLT, Sep 2025)", "url": "https://www.wvlt.tv/2025/09/30/knoxville-knox-county-office-housing-stability-unveils-3-year-plan-address-homelessness/"},
+        {"title": "Knoxville-Knox County Homeless Coalition", "url": "https://www.knoxhomeless.org/"}
+      ],
+      "situation_note": "Smallest CoC in the panel; OHS launched in 2023 after homelessness rose ~50% the prior year. A new CoC Board adopted a measurable Three-Year Plan (2025) with HUD-aligned performance metrics; goal: homelessness rare, brief, non-recurring.",
+      "verify": true
+    },
+    {
+      "coc": "FL-600",
+      "city": "Miami",
+      "coc_name": "Miami-Dade County CoC",
+      "lead_agency": "Miami-Dade County Homeless Trust",
+      "plan_title": "Priority Home: Miami-Dade County Community Homeless Plan",
+      "plan_url": "https://www.homelesstrust.org/",
+      "key_sources": [
+        {"title": "Miami-Dade County Homeless Trust", "url": "https://www.homelesstrust.org/homeless-trust/about-us/home.page"},
+        {"title": "Priority Home: Community Homeless Plan (PDF)", "url": "https://www.homelesstrust.org/resources-homeless/library/providers/governance-and-plan/homeless-plan.pdf"}
+      ],
+      "situation_note": "Funded by the nation's first dedicated homelessness tax (1992 Food & Beverage tax; 85% to ending homelessness). 'Priority Home' aims for rare/brief/one-time homelessness; HUD approved a coordinated youth-homelessness plan (Sep 2024); new prevention partnership ('Right at Home').",
+      "verify": false
+    },
+    {
+      "coc": "PA-500",
+      "city": "Philadelphia",
+      "coc_name": "Philadelphia CoC",
+      "lead_agency": "City of Philadelphia Office of Homeless Services (OHS)",
+      "plan_title": "Roadmap to Homes: Philadelphia's Five-Year Strategic Plan",
+      "plan_url": "https://www.phila.gov/departments/office-of-homeless-services/",
+      "key_sources": [
+        {"title": "Roadmap to Homes — Philadelphia OHS", "url": "http://philadelphiaofficeofhomelessservices.org/roadmap-to-homes/"},
+        {"title": "OHS FY2022 Data Snapshot (PDF)", "url": "https://www.phila.gov/media/20230221110800/ohs-data-snapshot-FY2022-report.pdf"}
+      ],
+      "situation_note": "'Roadmap to Homes' targets a 5%/year reduction in street homelessness; three overarching goals (rare, brief, non-recurring) and five primary goals incl. expanding housing resources, integrating systems, and engaging landlords.",
+      "verify": true
+    },
+    {
+      "coc": "IL-510",
+      "city": "Chicago",
+      "coc_name": "Chicago CoC",
+      "lead_agency": "Chicago Dept. of Family & Support Services (DFSS) + All Chicago (CoC)",
+      "plan_title": "Plan 2.0: A Home for Everyone + draft Five-Year Blueprint on Homelessness 2026–2031",
+      "plan_url": "https://www.chicago.gov/city/en/depts/fss/supp_info/continuum-of-care.html",
+      "key_sources": [
+        {"title": "Chicago Continuum of Care — City of Chicago", "url": "https://www.chicago.gov/city/en/depts/fss/supp_info/continuum-of-care.html"},
+        {"title": "Chicago's Plan to End Homelessness — Plan 2.0: A Home for Everyone", "url": "https://www.chicago.gov/city/en/depts/fss/provdrs/policy_and_advocacy/svcs/chicago-s-plan-to-end-homelessness---plan-2-0--a-home-for-everyo.html"},
+        {"title": "DRAFT — Chicago Five-Year Blueprint on Homelessness 2026–2031 (PDF)", "url": "https://www.chicago.gov/content/dam/city/sites/homelessness-response/City%20of%20Chicago_2026%20Five-Year%20Blueprint%20on%20Homelessness.pdf"}
+      ],
+      "situation_note": "DFSS manages prevention/shelter/outreach/housing with the Chicago CoC (All Chicago). 'Plan 2.0' (Housing First, prevention, wraparound) is being succeeded by a new Five-Year Blueprint (2026–2031, draft).",
+      "verify": false
+    }
+  ]
+}

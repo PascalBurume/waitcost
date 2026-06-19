@@ -1,0 +1,7 @@
+{
+  "name": "waitcost",
+  "version": "0.1.0",
+  "description": "Estimate the public cost of delaying homelessness intervention in a US city — a deterministic, offline system-dynamics simulator over real HUD PIT + Census ACS data, exposed as an Agent Skill.",
+  "author": "WaitCost",
+  "skills": ["skills/waitcost"]
+}

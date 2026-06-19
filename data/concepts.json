@@ -1,0 +1,47 @@
+{
+  "label": "General context — not the calibrated cost model.",
+  "concepts": [
+    {
+      "key": "rapid re-housing",
+      "aliases": ["rapid rehousing", "rapid re housing", "rrh"],
+      "definition": "Rapid re-housing moves people out of homelessness quickly by combining short-term rental assistance with housing-search and stabilization services. It does not require people to be 'housing ready' first — housing comes first, support follows.",
+      "source": {"title": "HUD Exchange — Rapid Re-Housing", "url": "https://www.hudexchange.info/homelessness-assistance/coc-esg-virtual-binders/coc-esg-homeless-eligibility/rapid-re-housing/"}
+    },
+    {
+      "key": "permanent supportive housing",
+      "aliases": ["supportive housing", "psh"],
+      "definition": "Permanent supportive housing (PSH) pairs long-term, non-time-limited rental housing with voluntary wrap-around services (health, mental health, case management). It targets people with chronic homelessness and disabling conditions, and is the most service-intensive intervention.",
+      "source": {"title": "HUD Exchange — Permanent Supportive Housing", "url": "https://www.hudexchange.info/homelessness-assistance/coc-esg-virtual-binders/coc-esg-program-components/permanent-housing/"}
+    },
+    {
+      "key": "homelessness prevention",
+      "aliases": ["prevention program", "prevention"],
+      "definition": "Prevention helps people at imminent risk of homelessness keep their current housing or move directly to new housing — through short-term financial help, mediation, or legal aid — before they ever enter shelter or the street.",
+      "source": {"title": "USICH — Prevention", "url": "https://www.usich.gov/"}
+    },
+    {
+      "key": "point-in-time count",
+      "aliases": ["point in time", "pit count", "pit"],
+      "definition": "The Point-in-Time (PIT) count is a HUD-required count of sheltered and unsheltered people experiencing homelessness on a single night in January each year. It is the headline measure of how many people are homeless in a community.",
+      "source": {"title": "HUD Exchange — PIT and HIC Guides", "url": "https://www.hudexchange.info/programs/hdx/pit-hic/"}
+    },
+    {
+      "key": "continuum of care",
+      "aliases": ["coc"],
+      "definition": "A Continuum of Care (CoC) is the regional planning body HUD funds to coordinate homelessness services for a defined geography (a city, county, or region). CA-600 is the Los Angeles City & County CoC. WaitCost answers at the CoC level — never about individuals.",
+      "source": {"title": "HUD Exchange — CoC Program", "url": "https://www.hudexchange.info/programs/coc/"}
+    },
+    {
+      "key": "chronic homelessness",
+      "aliases": ["chronically homeless", "chronic homeless"],
+      "definition": "HUD defines chronic homelessness as homelessness lasting a year or more (or repeated episodes totaling a year over three years) for a person with a disabling condition. This group has the highest public costs and is the primary target of permanent supportive housing.",
+      "source": {"title": "HUD — Definition of Chronic Homelessness", "url": "https://www.hudexchange.info/resource/4847/hearth-defining-chronically-homeless-final-rule/"}
+    },
+    {
+      "key": "housing cost driver",
+      "aliases": ["why does housing cost drive", "why is housing cost", "housing cost and homelessness"],
+      "definition": "Across cities, the cost of housing is the strongest predictor of how many people become homeless — stronger than poverty or unemployment. In WaitCost's learned inflow model, median home value is the dominant SHAP driver, matching the research that homelessness is primarily a housing-affordability problem.",
+      "source": {"title": "Colburn & Aldern, Homelessness Is a Housing Problem (2022)", "url": "https://homelessnesshousingproblem.com/"}
+    }
+  ]
+}

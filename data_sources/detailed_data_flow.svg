@@ -1,0 +1,96 @@
+<svg viewBox="0 0 1300 690" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ti de">
+<title id="ti">WaitCost detailed data flow</title>
+<desc id="de">Three phases: build the model once (fetch_acs to inflow_model.json), run the engine per question (params + model through simulate and montecarlo to cost-of-waiting and backtest), then reason, serve and show via the planner, orchestrator, agents, API and React app. Each box names the file and function.</desc>
+<style>
+  .t{font:600 19px system-ui, sans-serif; fill:#1c1b16}
+  .sub{font:400 12px system-ui, sans-serif; fill:#56534b}
+  .ph{font:700 12px system-ui, sans-serif; fill:#1A56DB; letter-spacing:.04em}
+  .bt{font:600 12px system-ui, sans-serif; fill:#1c1b16}
+  .bs{font:400 10px system-ui, sans-serif; fill:#56534b}
+  .cd{font:500 9.3px ui-monospace, monospace; fill:#143F9E}
+  .lab{font:500 10px ui-monospace, monospace; fill:#56534b}
+  .bx{fill:#ffffff; stroke:#d9d5c9; stroke-width:1.2}
+  .art{fill:#ffffff; stroke:#1A56DB; stroke-width:1.5}
+</style>
+<defs>
+  <marker id="a" markerWidth="9" markerHeight="9" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#1A56DB"/></marker>
+</defs>
+
+<rect x="0" y="0" width="1300" height="690" fill="#FAFAF7"/>
+<text class="t" x="30" y="28">WaitCost — detailed data flow (file · function per step)</text>
+<text class="sub" x="30" y="48">Phase ① runs once to build the model; ② and ③ run on every question. All offline.</text>
+
+<g stroke="#1A56DB" stroke-width="1.8" fill="none">
+  <path d="M650,202 L650,256" marker-end="url(#a)"/>
+  <path d="M650,378 L650,432" marker-end="url(#a)"/>
+  <path d="M495,544 L495,560" marker-end="url(#a)"/>
+</g>
+<text class="lab" x="660" y="232">model/inflow_model.json + config/params.yaml</text>
+<text class="lab" x="660" y="408">3 scenario results + backtest band</text>
+
+<g stroke="#1A56DB" stroke-width="1.6" fill="none">
+  <path d="M270,142 L290,142" marker-end="url(#a)"/><path d="M516,142 L536,142" marker-end="url(#a)"/><path d="M762,142 L782,142" marker-end="url(#a)"/><path d="M1008,142 L1028,142" marker-end="url(#a)"/>
+  <path d="M270,318 L290,318" marker-end="url(#a)"/><path d="M516,318 L536,318" marker-end="url(#a)"/><path d="M762,318 L782,318" marker-end="url(#a)"/><path d="M1008,318 L1028,318" marker-end="url(#a)"/>
+  <path d="M320,490 L350,490" marker-end="url(#a)"/><path d="M640,490 L670,490" marker-end="url(#a)"/><path d="M960,490 L990,490" marker-end="url(#a)"/>
+</g>
+
+<text class="ph" x="46" y="74">① BUILD — train the model once  ·  driver: scripts/train_inflow.py</text>
+<g>
+  <rect class="bx" x="46"  y="86" width="224" height="112" rx="9"/>
+  <text class="bt" x="58" y="108">Get the data</text><text class="bs" x="58" y="126">Census API + HUD / cost files</text>
+  <text class="cd" x="58" y="150">scripts/fetch_acs.py · main()</text><text class="cd" x="58" y="166">→ data/coc_panel.csv</text>
+  <rect class="bx" x="292" y="86" width="224" height="112" rx="9"/>
+  <text class="bt" x="304" y="108">Load + features</text><text class="bs" x="304" y="126">rate, log-transform, z-score</text>
+  <text class="cd" x="304" y="150">inflow_model.py</text><text class="cd" x="304" y="166">load_panel() · _design()</text>
+  <rect class="bx" x="538" y="86" width="224" height="112" rx="9"/>
+  <text class="bt" x="550" y="108">Train + pick</text><text class="bs" x="550" y="126">held-out leave-one-CoC-out CV</text>
+  <text class="cd" x="550" y="150">select_model()</text><text class="cd" x="550" y="166">leave_one_out()</text>
+  <rect class="bx" x="784" y="86" width="224" height="112" rx="9"/>
+  <text class="bt" x="796" y="108">Explain + calibrate</text><text class="bs" x="796" y="126">SHAP · rate → inflow + band</text>
+  <text class="cd" x="796" y="150">shap_values()</text><text class="cd" x="796" y="166">calibrate_inflow()</text>
+  <rect class="art" x="1030" y="86" width="224" height="112" rx="9"/>
+  <text class="bt" x="1042" y="108">Save the model</text><text class="bs" x="1042" y="126">the trained artifact (JSON)</text>
+  <text class="cd" x="1042" y="150">save_report() →</text><text class="cd" x="1042" y="166">model/inflow_model.json</text>
+</g>
+
+<text class="ph" x="46" y="250">② ENGINE — runs per question  ·  agent/skills.py + model/</text>
+<g>
+  <rect class="bx" x="46"  y="262" width="224" height="112" rx="9"/>
+  <text class="bt" x="58" y="284">Load assumptions</text><text class="bs" x="58" y="302">trained model + CA-600 params</text>
+  <text class="cd" x="58" y="326">fetch_hud_data(params.yaml)</text><text class="cd" x="58" y="342">load_inflow_model()</text>
+  <rect class="bx" x="292" y="262" width="224" height="112" rx="9"/>
+  <text class="bt" x="304" y="284">Build 3 scenarios</text><text class="bs" x="304" y="302">status quo · act now · delay</text>
+  <text class="cd" x="304" y="326">skills.make_scenario()</text>
+  <rect class="bx" x="538" y="262" width="224" height="112" rx="9"/>
+  <text class="bt" x="550" y="284">Simulate w/ uncertainty</text><text class="bs" x="550" y="302">hundreds of Monte-Carlo runs</text>
+  <text class="cd" x="550" y="326">skills.run_simulation →</text><text class="cd" x="550" y="342">montecarlo.run_montecarlo()</text>
+  <rect class="bx" x="784" y="262" width="224" height="112" rx="9"/>
+  <text class="bt" x="796" y="284">Cost of waiting</text><text class="bs" x="796" y="302">compare scenarios + bands</text>
+  <text class="cd" x="796" y="326">skills.compare_scenarios</text><text class="cd" x="796" y="342">metrics.cost_of_waiting()</text>
+  <rect class="bx" x="1030" y="262" width="224" height="112" rx="9"/>
+  <text class="bt" x="1042" y="284">Backtest (proof)</text><text class="bs" x="1042" y="302">predict 2024, check the band</text>
+  <text class="cd" x="1042" y="326">model/backtest.py</text><text class="cd" x="1042" y="342">backtest()</text>
+</g>
+
+<text class="ph" x="30" y="424">③ REASON → SERVE → SHOW  ·  agent/ + api/ + frontend/</text>
+<g>
+  <rect class="bx" x="30"  y="438" width="290" height="104" rx="9"/>
+  <text class="bt" x="44" y="462">Understand the question</text><text class="bs" x="44" y="480">find intent + numbers in text</text>
+  <text class="cd" x="44" y="504">agent/planner.py</text><text class="cd" x="44" y="520">classify_intent() · plan()</text>
+  <rect class="art" x="350" y="438" width="290" height="104" rx="9"/>
+  <text class="bt" x="364" y="462">Orchestrate (Action Tiers)</text><text class="bs" x="364" y="480">runs tools; human gate on Tier-2</text>
+  <text class="cd" x="364" y="504">agent/orchestrator.py</text><text class="cd" x="364" y="520">WaitCostAgent.answer()</text>
+  <rect class="bx" x="670" y="438" width="290" height="104" rx="9"/>
+  <text class="bt" x="684" y="462">Serve as JSON</text><text class="bs" x="684" y="480">one endpoint per view</text>
+  <text class="cd" x="684" y="504">api/main.py · api/payloads.py</text><text class="cd" x="684" y="520">ask_payload() · scenario_payload()…</text>
+  <rect class="bx" x="990" y="438" width="290" height="104" rx="9"/>
+  <text class="bt" x="1004" y="462">Web app</text><text class="bs" x="1004" y="480">Ask · Explore · Equity · Map</text>
+  <text class="cd" x="1004" y="504">frontend/ (React + Vite)</text>
+</g>
+
+<rect class="bx" x="350" y="560" width="930" height="66" rx="9"/>
+<text class="bs" x="364" y="582">The orchestrator calls these helpers; their results fold into the one answer:</text>
+<text class="cd" x="364" y="604">agent/decision.py · DecisionAgent.recommend()    analysis/viz.py · build_chart()    agent/city_brief.py · CityBriefAgent.brief()    analysis/equity.py · equity_analysis()</text>
+
+<text class="sub" x="30" y="660">Phase ① is reproducible &amp; run once; ② + ③ run on every question, fully offline. Every box names the file · function that executes it.</text>
+</svg>

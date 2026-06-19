@@ -1,0 +1,18 @@
+coc,coc_name,geo_acs,pit_year,pit_total,pit_sheltered,pit_unsheltered,pit_chronic,acs_release,population,per_capita_income,median_household_income,poverty_rate,median_home_value,persons_per_household,pop_density_sqmi
+CA-600,Los Angeles City & County,"Los Angeles County, CA",2024,71201,21692,49509,29823,ACS 2024 1-yr (API),9757179,46429,90845,13.3,866500,2.7,2403.1
+CA-601,San Diego City and County,"San Diego County, CA",2024,10605,4495,6110,3760,ACS 2024 1-yr (API),3298799,53674,109132,10.0,914700,2.7,783.5
+CA-501,San Francisco,"San Francisco County, CA",2024,8323,3969,4354,2989,ACS 2024 1-yr (API),827526,92786,139801,11.3,1314700,2.1,17720.0
+WA-500,Seattle/King County,"King County, WA",2024,16868,7058,9810,8397,ACS 2024 1-yr (API),2340211,75553,122080,8.7,885200,2.4,1106.1
+AZ-502,Phoenix/Mesa/Maricopa County,"Maricopa County, AZ",2024,9435,5359,4076,2135,ACS 2024 1-yr (API),4673096,47255,90967,10.2,482800,2.6,507.8
+CA-500,San Jose/Santa Clara City & County,"Santa Clara County, CA",2024,10394,2993,7401,4137,ACS 2024 1-yr (API),1926325,82180,168154,7.0,1555600,2.8,1492.0
+OR-501,"Portland, Gresham/Multnomah County","Multnomah County, OR",2024,7384,3440,3944,2974,ACS 2024 1-yr (API),795897,54207,90740,12.9,565100,2.2,1846.6
+NV-500,Las Vegas/Clark County,"Clark County, NV",2024,7906,3704,4202,2709,ACS 2024 1-yr (API),2398871,40763,80028,12.1,451000,2.7,304.0
+NY-600,New York City,"New York city, NY",2024,140134,135737,4397,4280,ACS 2024 1-yr (API),8478072,52504,81228,18.0,778600,2.4,28213.2
+DC-500,District of Columbia,"District of Columbia, DC",2024,5616,4716,900,1416,ACS 2024 1-yr (API),702250,76604,109707,17.3,733400,2.0,11493.5
+MN-500,Minneapolis/Hennepin County,"Hennepin County, MN",2024,3866,3370,496,643,ACS 2024 1-yr (API),1273334,58746,95274,9.3,396100,2.3,2298.4
+TN-502,Knoxville/Knox County,"Knox County, TN",2024,899,585,314,310,ACS 2024 1-yr (API),506748,43730,75210,12.9,379400,2.3,996.9
+FL-600,Miami-Dade County,"Miami-Dade County, FL",2024,3800,2767,1033,1110,ACS 2024 1-yr (API),2838461,40922,76184,14.1,547200,2.8,1494.0
+PA-500,Philadelphia,"Philadelphia County, PA",2024,5191,4215,976,1080,ACS 2024 1-yr (API),1573916,39443,60521,19.7,253600,2.2,11719.4
+IL-510,Chicago,"Chicago city, IL",2024,18836,17202,1634,2693,ACS 2024 1-yr (API),2721326,51976,80613,16.6,341200,2.3,11951.4
+CA-503,Sacramento City & County,"Sacramento County, CA",2024,6615,2671,3944,1574,ACS 2024 1-yr (API),1611231,44225,94087,12.0,554800,2.7,1669.2
+AZ-501,Tucson/Pima County,"Pima County, AZ",2024,2142,861,1281,798,ACS 2024 1-yr (API),1080149,41015,72067,13.5,349500,2.3,117.6

@@ -1,0 +1,165 @@
+<svg viewBox="0 0 1320 860" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ti de">
+<title id="ti">WaitCost — how the data is sourced, coordinated, and turned into dollars</title>
+<desc id="de">Four public data sources with their real Los Angeles figures, joined on HUD's CoC region code via a county crosswalk, producing the panel dataset and the LA calibration that feed the simulator and a dollar answer. All data public; the app runs offline.</desc>
+<style>
+  .t{font:600 23px system-ui,-apple-system,sans-serif; fill:#1c1b16}
+  .sub{font:400 13.5px system-ui,sans-serif; fill:#56534b}
+  .hd{font:700 11px system-ui,sans-serif; fill:#1A56DB; letter-spacing:.1em}
+  .bt{font:700 14.5px system-ui,sans-serif; fill:#1c1b16}
+  .bs{font:400 11.5px system-ui,sans-serif; fill:#56534b}
+  .bp{font:500 11.5px system-ui,sans-serif; fill:#1c1b16}
+  .ac{font:600 10.5px ui-monospace,monospace; fill:#7a766c}
+  .numln{font:600 11px ui-monospace,monospace; fill:#1c1b16}
+  .mono{font:600 14px ui-monospace,monospace; fill:#1c1b16}
+  .stept{font:700 12.5px system-ui,sans-serif; fill:#1c1b16}
+  .steps{font:400 11px system-ui,sans-serif; fill:#56534b}
+  .num{font:700 12px system-ui,sans-serif; fill:#fff}
+  .pill{font:700 9px system-ui,sans-serif; fill:#1a7f50; letter-spacing:.06em}
+  .note{font:400 11.5px system-ui,sans-serif; fill:#56534b}
+  .wt{font:700 14.5px system-ui,sans-serif; fill:#ffffff}
+  .wn{font:700 13px ui-monospace,monospace; fill:#ffffff}
+  .ws{font:400 11px system-ui,sans-serif; fill:#aec4f3}
+  .bx{fill:#ffffff; stroke:#d9d5c9; stroke-width:1.3}
+  .out{fill:#ffffff; stroke:#b8b3a6; stroke-width:1.3}
+</style>
+<defs>
+  <marker id="ah" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#9b968a"/></marker>
+  <marker id="ab" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#1A56DB"/></marker>
+</defs>
+
+<rect x="0" y="0" width="1320" height="860" fill="#FAFAF7"/>
+<text class="t" x="36" y="42">WaitCost — how the data is sourced and coordinated</text>
+<text class="sub" x="36" y="67">Four public sources (with their real Los Angeles figures), joined on HUD's region code, then turned into dollars. All data public; app runs offline.</text>
+
+<text class="hd" x="36"  y="102">PUBLIC DATA SOURCES  ·  REAL LA FIGURES</text>
+<text class="hd" x="506" y="102">HOW WE COORDINATE IT</text>
+<text class="hd" x="884" y="102">DATA → DOLLARS</text>
+
+<!-- ============ SOURCE CARDS ============ -->
+<!-- 1 HUD PIT -->
+<rect class="bx" x="36" y="116" width="430" height="152" rx="11"/>
+<rect x="36" y="116" width="7" height="152" rx="3.5" fill="#1A56DB"/>
+<text class="bt" x="60" y="142">HUD — Point-in-Time (PIT) counts</text>
+<text class="bs" x="60" y="161">2024 count (Jan 2024) · per region (CoC)</text>
+<text class="bp" x="60" y="184">Provides: homeless counts by situation</text>
+<rect x="60" y="194" width="382" height="40" rx="6" fill="#eef2fb"/>
+<text class="numln" x="72" y="211">LA CA-600:  71,201 total</text>
+<text class="numln" x="72" y="227">21,692 sheltered · 49,509 unshelt. · 29,823 chronic</text>
+<text class="ac" x="60" y="254">ACCESS: published per-CoC PDF reports</text>
+
+<!-- 2 Census ACS -->
+<rect class="bx" x="36" y="288" width="430" height="152" rx="11"/>
+<rect x="36" y="288" width="7" height="152" rx="3.5" fill="#1a7f50"/>
+<text class="bt" x="60" y="314">U.S. Census — ACS 1-year</text>
+<text class="bs" x="60" y="333">2024 estimates · per county (FIPS)</text>
+<text class="bp" x="60" y="356">Provides: income, poverty, home value, density</text>
+<rect x="60" y="366" width="382" height="40" rx="6" fill="#e7f3ec"/>
+<text class="numln" x="72" y="383">LA County:  median home value $866,500</text>
+<text class="numln" x="72" y="399">poverty 13.3% · population 9.76M</text>
+<rect x="60" y="416" width="148" height="16" rx="8" fill="#e7f3ec" stroke="#1a7f50" stroke-width="0.8"/>
+<text class="pill" x="71" y="428">LIVE API · VERIFIED</text>
+<text class="ac" x="218" y="428">fetch_acs.py · 0/119 ≥5%</text>
+
+<!-- 3 HUD SPM -->
+<rect class="bx" x="36" y="460" width="430" height="152" rx="11"/>
+<rect x="36" y="460" width="7" height="152" rx="3.5" fill="#1A56DB"/>
+<text class="bt" x="60" y="486">HUD — System Performance Measures</text>
+<text class="bs" x="60" y="505">FY2023 · Los Angeles (CA-600)</text>
+<text class="bp" x="60" y="528">Provides: flow rates + monthly inflow</text>
+<rect x="60" y="538" width="382" height="40" rx="6" fill="#eef2fb"/>
+<text class="numln" x="72" y="555">First-time homeless 29,818/yr → 2,485/mo</text>
+<text class="numln" x="72" y="571">exit to housing 32.8%/yr · returns 7.5% / 6mo</text>
+<text class="ac" x="60" y="598">ACCESS: PDF · annual rates → monthly</text>
+
+<!-- 4 Economic Roundtable -->
+<rect class="bx" x="36" y="632" width="430" height="152" rx="11"/>
+<rect x="36" y="632" width="7" height="152" rx="3.5" fill="#b45309"/>
+<text class="bt" x="60" y="658">Economic Roundtable — cost study</text>
+<text class="bs" x="60" y="677">&#8220;Where We Sleep&#8221; · 2024 dollars</text>
+<text class="bp" x="60" y="700">Provides: per-person public cost / month</text>
+<rect x="60" y="710" width="382" height="40" rx="6" fill="#fdf3e7"/>
+<text class="numln" x="72" y="727">at-risk $200 · sheltered $2,400</text>
+<text class="numln" x="72" y="743">unsheltered $2,900 · chronic $4,240  (+15%/yr)</text>
+<text class="ac" x="60" y="770">ACCESS: published cost study</text>
+
+<!-- arrows sources -> coordinate -->
+<g stroke="#9b968a" stroke-width="1.6" fill="none">
+  <path d="M466,192 L502,300" marker-end="url(#ah)"/>
+  <path d="M466,364 L502,372" marker-end="url(#ah)"/>
+  <path d="M466,536 L502,452" marker-end="url(#ah)"/>
+  <path d="M466,708 L502,520" marker-end="url(#ah)"/>
+</g>
+
+<!-- ============ COORDINATION PANEL ============ -->
+<rect x="508" y="116" width="338" height="668" rx="13" fill="#eef2fb" stroke="#1A56DB" stroke-width="1.4"/>
+<text class="stept" x="532" y="150" font-size="13.5">The CoC region code is the anchor;</text>
+<text class="steps" x="532" y="168">a county crosswalk bridges HUD and Census.</text>
+
+<g>
+  <circle cx="546" cy="214" r="13" fill="#1A56DB"/><text class="num" x="546" y="219" text-anchor="middle">1</text>
+  <text class="stept" x="570" y="210">Anchor on the CoC</text>
+  <text class="steps" x="570" y="227">One row = one HUD region (CA-600, WA-500 …)</text>
+
+  <circle cx="546" cy="300" r="13" fill="#1A56DB"/><text class="num" x="546" y="305" text-anchor="middle">2</text>
+  <text class="stept" x="570" y="296">Crosswalk: CoC → county (FIPS)</text>
+  <text class="steps" x="570" y="313">Bridges HUD (by region) ↔ Census (by county)</text>
+
+  <circle cx="546" cy="386" r="13" fill="#1A56DB"/><text class="num" x="546" y="391" text-anchor="middle">3</text>
+  <text class="stept" x="570" y="382">Keep single-county CoCs only</text>
+  <text class="steps" x="570" y="399">Clean per-capita rates (multi-county excluded)</text>
+
+  <circle cx="546" cy="472" r="13" fill="#1A56DB"/><text class="num" x="546" y="477" text-anchor="middle">4</text>
+  <text class="stept" x="570" y="468">Join → one row per city</text>
+  <text class="steps" x="570" y="485">HUD counts + Census economics, merged</text>
+
+  <circle cx="546" cy="558" r="13" fill="#1A56DB"/><text class="num" x="546" y="563" text-anchor="middle">5</text>
+  <text class="stept" x="570" y="554">Calibrate LA (CA-600)</text>
+  <text class="steps" x="570" y="571">+ SPM flows, Roundtable costs, 3% discount</text>
+
+  <circle cx="546" cy="644" r="13" fill="#1a7f50"/><text class="num" x="546" y="649" text-anchor="middle">✓</text>
+  <text class="stept" x="570" y="640">Verify</text>
+  <text class="steps" x="570" y="657">Re-fetch ACS from API · backtest vs 2024 count</text>
+</g>
+<text class="steps" x="532" y="712" font-style="italic">Same key everywhere → the sources can never</text>
+<text class="steps" x="532" y="728" font-style="italic">drift apart or double-count a region.</text>
+
+<!-- arrow coordinate -> outputs -->
+<g stroke="#1A56DB" stroke-width="1.8" fill="none">
+  <path d="M846,300 L880,212" marker-end="url(#ab)"/>
+  <path d="M846,360 L880,338" marker-end="url(#ab)"/>
+</g>
+
+<!-- ============ OUTPUTS ============ -->
+<rect class="out" x="884" y="160" width="400" height="92" rx="11"/>
+<text class="mono" x="906" y="188">coc_panel.csv</text>
+<text class="bs" x="906" y="210">The assembled panel — 17 cities</text>
+<text class="bs" x="906" y="228">counts (HUD) + economics (Census), one row each</text>
+
+<rect class="out" x="884" y="288" width="400" height="92" rx="11"/>
+<text class="mono" x="906" y="316">params.yaml</text>
+<text class="bs" x="906" y="338">CA-600 calibration · costs, flows</text>
+<text class="bs" x="906" y="356">inflow 2,485/mo · 3% discount · 10-yr horizon</text>
+
+<g stroke="#9b968a" stroke-width="1.8" fill="none">
+  <path d="M1084,252 L1084,288" marker-end="url(#ah)"/>
+  <path d="M1084,380 L1084,420" marker-end="url(#ah)"/>
+</g>
+
+<rect x="884" y="420" width="400" height="100" rx="11" style="fill:#f4f6fb;stroke:#1A56DB;stroke-width:1.3"/>
+<text class="bt" x="906" y="448">Simulator</text>
+<text class="bs" x="906" y="470">people × cost/month × duration, summed</text>
+<text class="bs" x="906" y="488">10 years · Monte Carlo 400 runs → a range</text>
+<text class="bs" x="906" y="506">discounted 3%/yr to today's dollars</text>
+
+<g stroke="#9b968a" stroke-width="1.8" fill="none"><path d="M1084,520 L1084,560" marker-end="url(#ah)"/></g>
+
+<rect x="884" y="560" width="400" height="124" rx="11" style="fill:#eef2fb;stroke:#1A56DB;stroke-width:1.6"/>
+<text x="906" y="594" style="font:700 18px ui-monospace,monospace;fill:#1A56DB">Wait 3 yrs → +$622.8M</text>
+<text x="906" y="615" style="font:400 12px ui-monospace,monospace;fill:#56534b">range $495.9M – $797.3M</text>
+<text x="906" y="644" style="font:700 14px ui-monospace,monospace;fill:#1c1b16">Act now vs nothing → saves ~$1.5B</text>
+<text x="906" y="669" style="font:400 11.5px system-ui,sans-serif;fill:#7a766c">Every $ traces to a source at the left.</text>
+
+<!-- footer -->
+<line x1="36" y1="812" x2="1284" y2="812" stroke="#e2ddd0" stroke-width="1"/>
+<text class="note" x="36" y="836">All sources public · <tspan fill="#1a7f50" font-weight="700">green = pulled live from an official API &amp; verified</tspan> · LA flow rates backtested vs the observed 2024 count · the AI never invents a number — the engine owns every figure.</text>
+</svg>

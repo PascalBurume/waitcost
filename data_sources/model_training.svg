@@ -1,0 +1,69 @@
+<svg viewBox="0 0 1390 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ti de">
+<title id="ti">How the WaitCost model is trained and checked</title>
+<desc id="de">Five steps: learn from 17 cities, train and test honestly with leave-one-out (R² about 0.36), explain with SHAP (housing cost top driver), turn into monthly inflow with an uncertainty band, and check against reality with a backtest (about 4% off, inside the band).</desc>
+<style>
+  .t{font:600 20px system-ui, -apple-system, sans-serif; fill:#1c1b16}
+  .sub{font:400 13px system-ui, sans-serif; fill:#56534b}
+  .bt{font:600 15px system-ui, sans-serif; fill:#1c1b16}
+  .bs{font:400 11.5px system-ui, sans-serif; fill:#56534b}
+  .num{font:700 13px system-ui, sans-serif; fill:#fff}
+  .chip{font:700 10.5px system-ui, sans-serif; fill:#143F9E}
+  .note{font:400 12px system-ui, sans-serif; fill:#56534b}
+  .bx{fill:#ffffff; stroke:#d9d5c9; stroke-width:1.3}
+  .cb{fill:none; stroke:#1A56DB; stroke-width:1.2}
+  .badge{fill:#1A56DB}
+</style>
+<defs>
+  <marker id="ah" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto">
+    <path d="M0,0 L7,3 L0,6 z" fill="#1A56DB"/>
+  </marker>
+</defs>
+
+<rect x="0" y="0" width="1390" height="360" fill="#FAFAF7"/>
+<text class="t" x="40" y="34">How the model is trained — and checked</text>
+<text class="sub" x="40" y="56">A small, honest model: it's tested on cities it never saw, and proven against a real year.</text>
+
+<g stroke="#1A56DB" stroke-width="2" fill="none">
+  <path d="M272,186 L310,186" marker-end="url(#ah)"/>
+  <path d="M546,186 L584,186" marker-end="url(#ah)"/>
+  <path d="M820,186 L858,186" marker-end="url(#ah)"/>
+  <path d="M1094,186 L1132,186" marker-end="url(#ah)"/>
+</g>
+
+<rect class="bx" x="40" y="78" width="232" height="214" rx="12"/>
+<circle class="badge" cx="64" cy="102" r="14"/><text class="num" x="64" y="107" text-anchor="middle">1</text>
+<text class="bt" x="156" y="200" text-anchor="middle">Learn from cities</text>
+<text class="bs" x="156" y="222" text-anchor="middle">Each city's housing cost,</text>
+<text class="bs" x="156" y="240" text-anchor="middle">poverty, income → its rate</text>
+<rect class="cb" x="106" y="258" width="100" height="22" rx="11"/><text class="chip" x="156" y="273" text-anchor="middle">17 real cities</text>
+
+<rect class="bx" x="314" y="78" width="232" height="214" rx="12"/>
+<circle class="badge" cx="338" cy="102" r="14"/><text class="num" x="338" y="107" text-anchor="middle">2</text>
+<text class="bt" x="430" y="200" text-anchor="middle">Train &amp; test honestly</text>
+<text class="bs" x="430" y="222" text-anchor="middle">Train on 16 cities, test on</text>
+<text class="bs" x="430" y="240" text-anchor="middle">the 1 left out — rotate all</text>
+<rect class="cb" x="356" y="258" width="148" height="22" rx="11"/><text class="chip" x="430" y="273" text-anchor="middle">held-out R² ≈ 0.36</text>
+
+<rect class="bx" x="588" y="78" width="232" height="214" rx="12"/>
+<circle class="badge" cx="612" cy="102" r="14"/><text class="num" x="612" y="107" text-anchor="middle">3</text>
+<text class="bt" x="704" y="200" text-anchor="middle">Explain each answer</text>
+<text class="bs" x="704" y="222" text-anchor="middle">SHAP splits a prediction</text>
+<text class="bs" x="704" y="240" text-anchor="middle">into what drove it</text>
+<rect class="cb" x="624" y="258" width="160" height="22" rx="11"/><text class="chip" x="704" y="273" text-anchor="middle">top driver: housing cost</text>
+
+<rect class="bx" x="862" y="78" width="232" height="214" rx="12"/>
+<circle class="badge" cx="886" cy="102" r="14"/><text class="num" x="886" y="107" text-anchor="middle">4</text>
+<text class="bt" x="978" y="200" text-anchor="middle">Turn it into inflow</text>
+<text class="bs" x="978" y="222" text-anchor="middle">Convert the rate into new</text>
+<text class="bs" x="978" y="240" text-anchor="middle">people/month + a range</text>
+<rect class="cb" x="900" y="258" width="156" height="22" rx="11"/><text class="chip" x="978" y="273" text-anchor="middle">≈2,500/mo + band</text>
+
+<rect class="bx" x="1136" y="78" width="232" height="214" rx="12"/>
+<circle class="badge" cx="1160" cy="102" r="14"/><text class="num" x="1160" y="107" text-anchor="middle">5</text>
+<text class="bt" x="1252" y="200" text-anchor="middle">Check vs reality</text>
+<text class="bs" x="1252" y="222" text-anchor="middle">Predict 2024 from 2023 —</text>
+<text class="bs" x="1252" y="240" text-anchor="middle">real count lands in the band</text>
+<rect class="cb" x="1174" y="258" width="156" height="22" rx="11"/><text class="chip" x="1252" y="273" text-anchor="middle">≈4% off · inside band</text>
+
+<text class="note" x="40" y="328">Honest by design: we report the score on a city the model never trained on — not a flattering in-sample one.</text>
+</svg>

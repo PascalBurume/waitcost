@@ -1,0 +1,83 @@
+<svg viewBox="0 0 1180 548" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ti de">
+<title id="ti">Where each piece of WaitCost data comes from</title>
+<desc id="de">Six data sources, each on its own row: the source, how we collect it, and the file it feeds. ACS is pulled live from the Census API and verified.</desc>
+<style>
+  .t{font:600 19px system-ui, -apple-system, sans-serif; fill:#1c1b16}
+  .sub{font:400 12.5px system-ui, sans-serif; fill:#56534b}
+  .hd{font:700 10.5px system-ui, sans-serif; fill:#1A56DB; letter-spacing:.09em}
+  .bt{font:600 12.5px system-ui, sans-serif; fill:#1c1b16}
+  .bs{font:400 11px system-ui, sans-serif; fill:#56534b}
+  .bm{font:500 11px ui-monospace, monospace; fill:#1c1b16}
+  .ok{fill:#1a7f50; font:600 11px system-ui, sans-serif}
+  .note{font:400 11px system-ui, sans-serif; fill:#56534b}
+  .bx{fill:#ffffff; stroke:#d9d5c9; stroke-width:1.2}
+  .ai{fill:#ffffff; stroke:#1A56DB; stroke-width:1.5}
+</style>
+<defs>
+  <marker id="ah" markerWidth="9" markerHeight="9" refX="7.5" refY="3" orient="auto">
+    <path d="M0,0 L7,3 L0,6 z" fill="#9b968a"/>
+  </marker>
+</defs>
+
+<rect x="0" y="0" width="1180" height="548" fill="#FAFAF7"/>
+<text class="t" x="24" y="30">WaitCost — where each piece of data comes from</text>
+<text class="sub" x="24" y="52">Each source has its own path: the source → how we get it → the file it feeds.</text>
+
+<text class="hd" x="38"  y="82">DATA SOURCE</text>
+<text class="hd" x="338" y="82">HOW WE GET IT</text>
+<text class="hd" x="808" y="82">WHAT IT FEEDS</text>
+
+<g stroke="#9b968a" stroke-width="1.5" fill="none">
+  <path d="M274,124 L320,124" marker-end="url(#ah)"/><path d="M744,124 L790,124" marker-end="url(#ah)"/>
+  <path d="M274,194 L320,194" marker-end="url(#ah)"/><path d="M744,194 L790,194" marker-end="url(#ah)"/>
+  <path d="M274,264 L320,264" marker-end="url(#ah)"/><path d="M744,264 L790,264" marker-end="url(#ah)"/>
+  <path d="M274,334 L320,334" marker-end="url(#ah)"/><path d="M744,334 L790,334" marker-end="url(#ah)"/>
+  <path d="M274,404 L320,404" marker-end="url(#ah)"/><path d="M744,404 L790,404" marker-end="url(#ah)"/>
+  <path d="M274,474 L320,474" marker-end="url(#ah)"/><path d="M744,474 L790,474" marker-end="url(#ah)"/>
+</g>
+
+<rect class="bx" x="24"  y="96" width="250" height="56" rx="8"/>
+<text class="bt" x="38" y="120">HUD — PIT counts</text><text class="bs" x="38" y="138">2024 · per city (CoC)</text>
+<rect class="bx" x="324" y="96" width="420" height="56" rx="8"/>
+<text class="bs" x="338" y="120">Download each city's published PDF;</text><text class="bs" x="338" y="138">read the homeless-count table.</text>
+<rect class="bx" x="794" y="96" width="360" height="56" rx="8"/>
+<text class="bm" x="808" y="120">coc_panel.csv</text><text class="bs" x="808" y="138">homeless counts · backtest</text>
+
+<rect class="bx" x="24"  y="166" width="250" height="56" rx="8"/>
+<text class="bt" x="38" y="190">U.S. Census — ACS</text><text class="bs" x="38" y="208">2024 1-year estimates</text>
+<rect class="ai" x="324" y="166" width="420" height="56" rx="8"/>
+<text class="bs" x="338" y="190">Pulled live from the <tspan font-weight="700">Census API</tspan> (a key) via</text>
+<text class="bm" x="338" y="208">scripts/fetch_acs.py <tspan class="ok">· verified</tspan></text>
+<rect class="bx" x="794" y="166" width="360" height="56" rx="8"/>
+<text class="bm" x="808" y="190">coc_panel.csv</text><text class="bs" x="808" y="208">income · poverty · home value · density</text>
+
+<rect class="bx" x="24"  y="236" width="250" height="56" rx="8"/>
+<text class="bt" x="38" y="260">HUD — SPM</text><text class="bs" x="38" y="278">FY2023 · Los Angeles</text>
+<rect class="bx" x="324" y="236" width="420" height="56" rx="8"/>
+<text class="bs" x="338" y="260">Read 4 measures from the PDF;</text><text class="bs" x="338" y="278">convert annual rates to monthly.</text>
+<rect class="bx" x="794" y="236" width="360" height="56" rx="8"/>
+<text class="bm" x="808" y="260">params.yaml</text><text class="bs" x="808" y="278">flow rates + monthly inflow</text>
+
+<rect class="bx" x="24"  y="306" width="250" height="56" rx="8"/>
+<text class="bt" x="38" y="330">Economic Roundtable</text><text class="bs" x="38" y="348">LA cost study (2024$)</text>
+<rect class="bx" x="324" y="306" width="420" height="56" rx="8"/>
+<text class="bs" x="338" y="330">Read the published</text><text class="bs" x="338" y="348">per-person public-cost figures.</text>
+<rect class="bx" x="794" y="306" width="360" height="56" rx="8"/>
+<text class="bm" x="808" y="330">params.yaml</text><text class="bs" x="808" y="348">per-person costs</text>
+
+<rect class="bx" x="24"  y="376" width="250" height="56" rx="8"/>
+<text class="bt" x="38" y="400">HUD race tables + ACS</text><text class="bs" x="38" y="418">2024</text>
+<rect class="bx" x="324" y="376" width="420" height="56" rx="8"/>
+<text class="bs" x="338" y="400">Read the race / ethnicity</text><text class="bs" x="338" y="418">subpopulation tables.</text>
+<rect class="bx" x="794" y="376" width="360" height="56" rx="8"/>
+<text class="bm" x="808" y="400">equity_*.csv</text><text class="bs" x="808" y="418">disparity by group (population-level)</text>
+
+<rect class="bx" x="24"  y="446" width="250" height="56" rx="8"/>
+<text class="bt" x="38" y="470">City plans + USICH</text><text class="bs" x="38" y="488">agency strategies</text>
+<rect class="bx" x="324" y="446" width="420" height="56" rx="8"/>
+<text class="bs" x="338" y="470">Live web search; record the</text><text class="bs" x="338" y="488">lead agency, plan title + link.</text>
+<rect class="bx" x="794" y="446" width="360" height="56" rx="8"/>
+<text class="bm" x="808" y="470">city_sources.json</text><text class="bs" x="808" y="488">situation &amp; strategy</text>
+
+<text class="note" x="24" y="528"><tspan fill="#1A56DB" font-weight="700">Blue outline</tspan> = pulled live from an official API (reproducible &amp; verified).  All data is public; the app then runs fully offline.</text>
+</svg>

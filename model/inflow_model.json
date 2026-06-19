@@ -1,0 +1,54 @@
+{
+  "target_coc": "CA-600",
+  "target_col": "homeless_rate_per_1k",
+  "n_coc": 17,
+  "features": [
+    "log_median_home_value",
+    "poverty_rate",
+    "median_household_income",
+    "log_pop_density"
+  ],
+  "model": "gb_stumps(rounds=50)",
+  "loo_r2": 0.4506664159437056,
+  "loo_mae": 1.7284680794801357,
+  "insample_r2": 0.8911673425224618,
+  "observed_rate_per_1k": 7.297293613246206,
+  "predicted_rate_per_1k": 7.4491919797718955,
+  "pred_rate_p10": 3.731162743268569,
+  "pred_rate_p90": 11.167221216275223,
+  "shap_target": [
+    {
+      "feature": "log_median_home_value",
+      "shap": 2.330807432959507
+    },
+    {
+      "feature": "log_pop_density",
+      "shap": -0.2917236567492452
+    },
+    {
+      "feature": "poverty_rate",
+      "shap": -0.16337550420387806
+    },
+    {
+      "feature": "median_household_income",
+      "shap": 0.0
+    }
+  ],
+  "base_value_rate_per_1k": 5.5734837077655115,
+  "expected_value_rate_per_1k": 5.5734837077655115,
+  "inflow_at_risk_monthly": {
+    "p50": 2543.9084843199566,
+    "p10": 1274.1967967470862,
+    "p90": 3813.6201718928273,
+    "implied_cv": 0.3894494857849691,
+    "annual_turnover": 0.42
+  },
+  "spm_crossval": {
+    "spm_first_time_annual": 29818,
+    "spm_inflow_monthly": 2484.8333333333335,
+    "ml_inflow_monthly": 2543.9084843199566,
+    "agreement_pct_diff": 2.3774291093952575,
+    "note": "ML (ACS->PIT) vs HUD SPM M5 (first-time homeless): independent methods"
+  },
+  "data_source": "HUD 2024 PIT (CoC PopSub) + Census ACS 2024 1-yr; see data/SOURCES.md"
+}

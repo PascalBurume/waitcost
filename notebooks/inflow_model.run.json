@@ -1,0 +1,48 @@
+{
+  "target_coc": "CA-600",
+  "target_col": "homeless_rate_per_1k",
+  "n_coc": 17,
+  "features": [
+    "log_median_home_value",
+    "poverty_rate",
+    "median_household_income",
+    "log_pop_density"
+  ],
+  "model": "gb_stumps(rounds=50)",
+  "loo_r2": 0.36116483485899864,
+  "loo_mae": 1.9237294994174388,
+  "insample_r2": 0.8911673425224618,
+  "observed_rate_per_1k": 7.297293613246206,
+  "predicted_rate_per_1k": 7.4491919797718955,
+  "pred_rate_p10": 3.410545499785779,
+  "pred_rate_p90": 11.487838459758013,
+  "shap_target": [
+    {
+      "feature": "log_median_home_value",
+      "shap": 2.330807432959507
+    },
+    {
+      "feature": "log_pop_density",
+      "shap": -0.2917236567492452
+    },
+    {
+      "feature": "poverty_rate",
+      "shap": -0.16337550420387806
+    },
+    {
+      "feature": "median_household_income",
+      "shap": 0.0
+    }
+  ],
+  "base_value_rate_per_1k": 5.5734837077655115,
+  "expected_value_rate_per_1k": 5.5734837077655115,
+  "inflow_at_risk_monthly": {
+    "p50": 2543.9084843199566,
+    "p10": 1164.7056025169006,
+    "p90": 3923.1113661230133,
+    "implied_cv": 0.42303292815875654,
+    "annual_turnover": 0.42
+  },
+  "spm_crossval": null,
+  "data_source": "HUD 2024 PIT (CoC PopSub) + Census ACS 2024 1-yr; see data/SOURCES.md"
+}

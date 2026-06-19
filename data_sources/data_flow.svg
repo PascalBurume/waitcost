@@ -1,0 +1,118 @@
+<svg viewBox="0 0 1330 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ti de">
+<title id="ti">WaitCost data flow</title>
+<desc id="de">Public online sources are collected once into repo data files (ACS now via the Census API, verified), processed by the ML model, simulator, equity lens and CityBrief corpus, then served via FastAPI and four agents to the React web app.</desc>
+<style>
+  .t{font:600 19px system-ui, -apple-system, sans-serif; fill:#1c1b16}
+  .st{font:600 11px system-ui, sans-serif; fill:#1A56DB; letter-spacing:.09em}
+  .bt{font:600 12.5px system-ui, sans-serif; fill:#1c1b16}
+  .bs{font:400 10.5px system-ui, sans-serif; fill:#56534b}
+  .bm{font:500 10px ui-monospace, monospace; fill:#56534b}
+  .vb{font:700 9px system-ui, sans-serif; fill:#56534b; letter-spacing:.08em}
+  .note{font:400 11px system-ui, sans-serif; fill:#56534b}
+  .bx{fill:#ffffff; stroke:#d9d5c9; stroke-width:1.2}
+  .ai{fill:#ffffff; stroke:#1A56DB; stroke-width:1.6}
+  .chip{fill:none; stroke:#b8b3a6; stroke-width:1}
+  .pill{fill:#ffffff; stroke:#b8b3a6; stroke-width:1}
+  .tab{fill:#1A56DB}
+  .ok{fill:#1a7f50; font:600 10.5px system-ui, sans-serif}
+</style>
+<defs>
+  <marker id="ah" markerWidth="9" markerHeight="9" refX="7.5" refY="3" orient="auto">
+    <path d="M0,0 L7,3 L0,6 z" fill="#9b968a"/>
+  </marker>
+</defs>
+
+<rect x="0" y="0" width="1330" height="460" fill="#FAFAF7"/>
+<text class="t" x="24" y="26">WaitCost — data sources &amp; how they're used</text>
+
+<text class="st" x="109"  y="52" text-anchor="middle">ONLINE SOURCES</text>
+<text class="st" x="347"  y="52" text-anchor="middle">COLLECT</text>
+<text class="st" x="585"  y="52" text-anchor="middle">DATA FILES</text>
+<text class="st" x="868"  y="52" text-anchor="middle">PROCESS</text>
+<text class="st" x="1185" y="52" text-anchor="middle">SERVE</text>
+
+<g stroke="#9b968a" stroke-width="1.6" fill="none">
+  <path d="M194,250 L272,250" marker-end="url(#ah)"/>
+  <path d="M422,250 L500,250" marker-end="url(#ah)"/>
+  <path d="M670,250 L748,250" marker-end="url(#ah)"/>
+  <path d="M988,250 L1066,250" marker-end="url(#ah)"/>
+</g>
+<g>
+  <rect class="pill" x="205" y="241" width="56" height="18" rx="9"/><text class="vb" x="233" y="253" text-anchor="middle">GATHER</text>
+  <rect class="pill" x="437" y="241" width="48" height="18" rx="9"/><text class="vb" x="461" y="253" text-anchor="middle">STORE</text>
+  <rect class="pill" x="677" y="241" width="64" height="18" rx="9"/><text class="vb" x="709" y="253" text-anchor="middle">COMPUTE</text>
+  <rect class="pill" x="1003" y="241" width="48" height="18" rx="9"/><text class="vb" x="1027" y="253" text-anchor="middle">SERVE</text>
+</g>
+
+<g>
+  <rect class="bx" x="24" y="70"  width="170" height="54" rx="8"/>
+  <text class="bt" x="38" y="92">HUD PIT counts</text><text class="bs" x="38" y="109">homeless counts · 2024</text>
+  <rect class="bx" x="24" y="138" width="170" height="54" rx="8"/>
+  <text class="bt" x="38" y="160">Census ACS 2024</text><text class="bs" x="38" y="177">economic features · API</text>
+  <rect class="bx" x="24" y="206" width="170" height="54" rx="8"/>
+  <text class="bt" x="38" y="228">HUD SPM FY2023</text><text class="bs" x="38" y="245">system flow rates</text>
+  <rect class="bx" x="24" y="274" width="170" height="54" rx="8"/>
+  <text class="bt" x="38" y="296">Economic Roundtable</text><text class="bs" x="38" y="313">per-person costs</text>
+  <rect class="bx" x="24" y="342" width="170" height="54" rx="8"/>
+  <text class="bt" x="38" y="364">City plans + USICH</text><text class="bs" x="38" y="381">strategy &amp; context</text>
+</g>
+
+<rect class="bx" x="272" y="178" width="150" height="150" rx="8"/>
+<text class="bt" x="286" y="205">Fetch + verify</text>
+<text class="bs" x="286" y="226">HUD PDFs · Census API</text>
+<text class="bs" x="286" y="244">tag source + vintage</text>
+<text class="ok"  x="286" y="263">ACS verified 0/119 ≥5%</text>
+<text class="bs" x="286" y="289" font-style="italic">one-time, not at runtime</text>
+
+<g>
+  <rect class="bx" x="500" y="80"  width="170" height="56" rx="8"/>
+  <text class="bm" x="514" y="103">coc_panel.csv</text><text class="bs" x="514" y="121">17 cities · PIT + ACS(API)</text>
+  <rect class="bx" x="500" y="156" width="170" height="56" rx="8"/>
+  <text class="bm" x="514" y="179">params.yaml</text><text class="bs" x="514" y="197">calibrated CA-600</text>
+  <rect class="bx" x="500" y="232" width="170" height="56" rx="8"/>
+  <text class="bm" x="514" y="255">equity_*.csv</text><text class="bs" x="514" y="273">race × CoC</text>
+  <rect class="bx" x="500" y="308" width="170" height="56" rx="8"/>
+  <text class="bm" x="514" y="331">city_sources.json</text><text class="bs" x="514" y="349">plans + citations</text>
+</g>
+
+<rect class="ai" x="748" y="80" width="240" height="128" rx="8"/>
+<rect class="tab" x="748" y="80" width="6" height="128"/>
+<text class="bt" x="768" y="104">ML inflow model</text>
+<text class="bs" x="768" y="124">ingest → transform → train</text>
+<text class="bs" x="768" y="142">leave-one-CoC-out CV · R²≈0.36</text>
+<text class="bs" x="768" y="160">exact SHAP → inflow + band</text>
+<text class="bs" x="768" y="186" font-style="italic">→ inflow_model.json</text>
+
+<rect class="bx" x="748" y="224" width="240" height="78" rx="8"/>
+<text class="bt" x="762" y="248">System-dynamics simulator</text>
+<text class="bs" x="762" y="268">Monte Carlo · 10-yr cost bands</text>
+<text class="bs" x="762" y="286">backtest ≈4% (inside band)</text>
+
+<rect class="bx" x="748" y="318" width="240" height="66" rx="8"/>
+<text class="bt" x="762" y="342">Equity lens + CityBrief corpus</text>
+<text class="bs" x="762" y="360">disproportionality · situation &amp; plans</text>
+
+<rect class="bx" x="1066" y="80" width="238" height="54" rx="8"/>
+<text class="bt" x="1080" y="102">FastAPI</text>
+<text class="bm" x="1080" y="120">/ask · /scenario · /city-brief …</text>
+
+<rect class="ai" x="1066" y="150" width="238" height="150" rx="8"/>
+<rect class="tab" x="1066" y="150" width="6" height="150"/>
+<text class="bt" x="1084" y="171">4 AI agents</text>
+<rect class="chip" x="1082" y="180" width="206" height="26" rx="6"/>
+<text class="bs" x="1094" y="197">Analyst — runs the reasoning loop</text>
+<rect class="chip" x="1082" y="210" width="206" height="26" rx="6"/>
+<text class="bs" x="1094" y="227">Visualization — 18 decision charts</text>
+<rect class="chip" x="1082" y="240" width="206" height="26" rx="6"/>
+<text class="bs" x="1094" y="257">CityBrief — situation &amp; plans</text>
+<rect class="chip" x="1082" y="270" width="206" height="26" rx="6"/>
+<text class="bs" x="1094" y="287">Decision — recommends act / wait</text>
+
+<rect class="bx" x="1066" y="316" width="238" height="68" rx="8"/>
+<text class="bt" x="1080" y="340">React web app · 7 screens</text>
+<text class="bs" x="1080" y="358">Ask · Explore · Equity · Map · …</text>
+
+<rect class="tab" x="24" y="404" width="6" height="14"/>
+<text class="note" x="40" y="415">accent = AI / learned + agent components</text>
+<text class="note" x="470" y="415">Public sources · ACS reproducible via Census API (verified) · runs fully offline · outputs are ranges.</text>
+</svg>

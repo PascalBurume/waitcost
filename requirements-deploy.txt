@@ -1,0 +1,10 @@
+# Lean runtime deps for the single-service cloud deploy (Hugging Face Space, Docker).
+# WAITCOST_PLANNER=rule → no LLM, no Ollama, no GPU. Streamlit/plotly/pytest/httpx
+# and all ML-training deps are intentionally excluded (not served at runtime).
+numpy>=1.24
+pandas>=2.0
+pyyaml>=6.0
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-docx>=1.1
+reportlab>=4.0
