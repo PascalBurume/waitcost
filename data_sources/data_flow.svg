@@ -98,15 +98,17 @@
 
 <rect class="ai" x="1066" y="150" width="238" height="150" rx="8"/>
 <rect class="tab" x="1066" y="150" width="6" height="150"/>
-<text class="bt" x="1084" y="171">4 AI agents</text>
-<rect class="chip" x="1082" y="180" width="206" height="26" rx="6"/>
-<text class="bs" x="1094" y="197">Analyst — runs the reasoning loop</text>
-<rect class="chip" x="1082" y="210" width="206" height="26" rx="6"/>
-<text class="bs" x="1094" y="227">Visualization — 18 decision charts</text>
-<rect class="chip" x="1082" y="240" width="206" height="26" rx="6"/>
-<text class="bs" x="1094" y="257">CityBrief — situation &amp; plans</text>
-<rect class="chip" x="1082" y="270" width="206" height="26" rx="6"/>
-<text class="bs" x="1094" y="287">Decision — recommends act / wait</text>
+<text class="bt" x="1084" y="169">5 AI agents</text>
+<rect class="chip" x="1082" y="175" width="206" height="21" rx="6"/>
+<text class="bs" x="1094" y="190">Analyst — runs the reasoning loop</text>
+<rect class="chip" x="1082" y="199" width="206" height="21" rx="6"/>
+<text class="bs" x="1094" y="214">Visualization — 18 decision charts</text>
+<rect class="chip" x="1082" y="223" width="206" height="21" rx="6"/>
+<text class="bs" x="1094" y="238">CityBrief — situation &amp; plans</text>
+<rect class="chip" x="1082" y="247" width="206" height="21" rx="6"/>
+<text class="bs" x="1094" y="262">Decision — recommends act / wait</text>
+<rect class="chip" x="1082" y="271" width="206" height="21" rx="6"/>
+<text class="bs" x="1094" y="286">Evaluator — checks every answer</text>
 
 <rect class="bx" x="1066" y="316" width="238" height="68" rx="8"/>
 <text class="bt" x="1080" y="340">React web app · 7 screens</text>
