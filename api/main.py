@@ -20,6 +20,9 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from agent.env import load_dotenv
+load_dotenv()   # pick up ANTHROPIC_API_KEY etc. from .env (no-override)
+
 from api import brief_export as BE
 from api import payloads as P
 

@@ -1,0 +1,32 @@
+# Keep the Vercel upload + function bundle lean (the Python function has a 250 MB
+# unzipped limit). The frontend SOURCE is kept (Vercel builds it); only deps/output
+# and things the API never imports are excluded.
+.git/
+.venv/
+venv/
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+
+# frontend deps + local build (Vercel runs npm install + vite build fresh)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# not imported by the API at runtime
+eval/
+skills/
+app/
+notebooks/
+design/
+scripts/
+
+# large local artifacts / alternate deploy files
+outputs/
+MEMORY.md
+*.docx
+*.pdf
+Dockerfile
+Dockerfile.backend
+Dockerfile.backend.dockerignore
+docker-compose.yml

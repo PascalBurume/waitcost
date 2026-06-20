@@ -48,7 +48,7 @@ def test_waitcost_cli_ask_matches_engine_numbers():
 
 def test_waitcost_cli_tools_reports_counts():
     tools = _run_cli("tools")
-    assert tools["agents"] == 4
+    assert tools["agents"] == 5  # analyst, visualization, city_brief, decision, evaluator
     # tools_payload overrides `capabilities` with the full catalog list; counts
     # are the list length + the chart count.
     assert len(tools["capabilities"]) == 16 and tools["charts"] == 18

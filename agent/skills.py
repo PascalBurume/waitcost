@@ -87,7 +87,7 @@ def retrieve_us_context(coc="CA-600", live=False):
 
 def _enrich_context_live(coc, base):
     """Placeholder for online enrichment (Census API / HUD Fair Market Rents /
-    FRED). Wired the same way as the Gemma planner: try live, fall back offline.
+    FRED). Wired the same way as the Claude planner: try live, fall back offline.
     Not used in the offline demo; returns nothing until a key/endpoint is set."""
     return {}
 
@@ -213,7 +213,7 @@ def compare_scenarios(params, plan, runs):
 # The brief CITES the decision agent's verdict verbatim — it never recomputes or
 # rephrases it — so the always-visible Recommendation card and the (collapsed)
 # Decision brief can never contradict each other. The framing line below doubles
-# as an idempotency sentinel (see orchestrator's Gemma-path guarantee).
+# as an idempotency sentinel (see orchestrator's Claude-path guarantee).
 RECOMMENDATION_FRAMING = "This brief supports the recommendation above:"
 
 

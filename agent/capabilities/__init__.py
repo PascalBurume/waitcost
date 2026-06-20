@@ -11,6 +11,7 @@ from agent.capabilities.registry import (  # noqa: F401
     Capability,
     INFRA_CAPS,
     REGISTRY,
+    anthropic_tools,
     by_intent,
     capabilities_catalog,
     classify,

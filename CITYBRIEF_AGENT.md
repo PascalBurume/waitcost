@@ -1,10 +1,11 @@
 # WaitCost — CityBriefAgent (third agent) spec
 
-> **Status: shipped — and since superseded by a 4-agent roster.** This spec describes
+> **Status: shipped — and since superseded by a 5-agent roster.** This spec describes
 > adding the *third* agent. A **fourth agent** (the **decision agent**, `agent/decision.py`)
-> was added afterward. The current, canonical count comes from the code registry
-> (`agent/tools.py` → `/tools`): **4 agents · 16 capabilities · 16 skills · 18 charts**
-> (agents: analyst · visualization · city_brief · decision). Treat any "3 agents" / "2 AI
+> and a **fifth agent** (the **evaluator**, a post-answer critic) were added afterward. The
+> current, canonical count comes from the code registry
+> (`agent/tools.py` → `/tools`): **5 agents · 16 capabilities · 16 skills · 18 charts**
+> (agents: analyst · visualization · city_brief · decision · evaluator). Treat any "3 agents" / "2 AI
 > agents" reference below as historical — see `ARCHITECTURE.md` for the current architecture.
 
 **For the coding agent.** Add a third agent that answers **general questions about each city's
@@ -76,7 +77,7 @@ homelessness situation and its care plans / response strategy**, grounded in a c
   "trajectory": [ ... ]
 }
 ```
-- **Narration:** when Gemma is available (see `FINALIZE.md`), use it to write `situation`/`plan.summary`
+- **Narration:** when Claude Sonnet 4.6 is available (see `FINALIZE.md`), use it to write `situation`/`plan.summary`
   from the structured facts, with the **same number-guard**: the LLM may phrase, but every figure must
   trace to `retrieve_us_context()`/`city_sources.json`; otherwise fall back to a deterministic template.
 - Always attach `sources` and the `label`.
@@ -112,8 +113,8 @@ homelessness situation and its care plans / response strategy**, grounded in a c
 ## 6. Tool registry + counts (keep the system honest)
 - Register the new agent + its capability in `agent/tools.py` so `registry_summary()` reflects it.
 - **Keep every agent/chart count in sync with the registry** (`agent/tools.py` → `/tools`). After the
-  decision agent landed the canonical figure is **4 agents · 16 capabilities · 16 skills · 18 charts**
-  (was bumped 2 → 3 here, then 3 → 4). When a count changes, grep the docs for the old number
+  decision and evaluator agents landed the canonical figure is **5 agents · 16 capabilities · 16 skills · 18 charts**
+  (was bumped 2 → 3 here, then 3 → 4, then 4 → 5). When a count changes, grep the docs for the old number
   (`README.md`, `ARCHITECTURE.md`, `IMPLEMENTATION.md`, `DESIGN_PROMPT.md`, the Streamlit app, the design
   copy) and update all of them — the registry is the single source of truth.
 
@@ -127,14 +128,14 @@ homelessness situation and its care plans / response strategy**, grounded in a c
 - An individual-level question ("which family will become homeless in Chicago?") is **declined**.
 - Offline mode works with no network; with `WAITCOST_ONLINE=1` and the search interface stubbed, the
   brief still returns and `online` reflects whether live data was used.
-- **Number-guard test:** if Gemma narration introduces a figure not in the facts, the deterministic
+- **Number-guard test:** if Claude narration introduces a figure not in the facts, the deterministic
   template is used instead.
 
 ---
 
 ## 8. Definition of done
 The agents coordinate cleanly (analyst → simulator; viz → charts; **city-brief → grounded context**;
-decision → recommendation — the roster is now **4 agents**, see the status banner above);
+decision → recommendation; evaluator → post-answer critique — the roster is now **5 agents**, see the status banner above);
 `/city-brief` and `/city-sources` work for all 17 CoCs and every answer cites real sources; the panel
 renders with the "general context" label and clickable sources; offline by default, live search is an
 opt-in that never breaks the demo; counts updated everywhere to match the registry; `pytest eval/verifier.py` green.

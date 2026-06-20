@@ -1,5 +1,6 @@
 import { useState } from "react";
-import type { ToolsPayload } from "../api/types";
+import type { ToolsPayload, AskResult } from "../api/types";
+import { api } from "../api/client";
 import { useApp } from "../state";
 import { Icon } from "../lib/icons";
 import { TierBadge } from "../components/ui";
@@ -55,6 +56,42 @@ export function GovernanceScreen({ tools }: { tools: ToolsPayload | null }) {
         </div>
 
         <div>
+          <div className="card" style={{ marginBottom: 22, padding: "20px 22px" }}>
+            <span className="eyebrow"><Icon.Shield size={13} /> Every answer is checked — the Evaluator (5th agent)</span>
+            <p className="muted" style={{ fontSize: "var(--fs-sm)", margin: "12px 0 18px", lineHeight: 1.65 }}>
+              The worst outcome in a budget tool is a confident <i>wrong</i> answer. So before you
+              see one, a post-answer critic checks it across six dimensions — hard guarantees in
+              code, plus an LLM judge for relevance. When something's off, we show you what.
+            </p>
+
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".04em", textTransform: "uppercase",
+              color: "var(--ink-3)", marginBottom: 6 }}>The six checks</div>
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, fontSize: "var(--fs-sm)" }}>
+              {([
+                ["Grounding", "every figure traces to the engine — no invented numbers"],
+                ["Scope", "never answers an individual / sub-CoC question"],
+                ["Parameters", "flags any default used; echoes back what it read"],
+                ["Data confidence", "labels non-LA cities illustrative, widens the range"],
+                ["Chart ↔ text", "the chart shows the same figure as the text"],
+                ["Question-match", "an LLM judge checks it answers what you asked"],
+              ] as const).map(([n, d]) => (
+                <li key={n} style={{ display: "flex", gap: 14, padding: "8px 0", lineHeight: 1.5,
+                  borderBottom: "1px solid var(--hairline)" }}>
+                  <span style={{ flex: "0 0 130px", fontWeight: 600 }}>{n}</span>
+                  <span style={{ flex: 1, color: "var(--ink-2)" }}>{d}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div style={{ marginTop: 18, display: "grid", gap: 8, fontSize: "var(--fs-sm)", lineHeight: 1.55 }}>
+              <div><b>If it's wrong</b> — it self-corrects once, then declines rather than guess.</div>
+              <div><b>If it's ambiguous</b> — it asks which reading you meant instead of picking one.</div>
+              <div><b>If it's unsure</b> — it answers with a caveat, never a wrongful refusal.</div>
+            </div>
+
+            <EvaluatorDemo />
+          </div>
+
           <div className="card gov-suff">
             <span className="eyebrow">Data-sufficiency demo</span>
             <p className="muted" style={{ fontSize: "var(--fs-sm)", margin: "8px 0 16px" }}>
@@ -102,6 +139,82 @@ export function GovernanceScreen({ tools }: { tools: ToolsPayload | null }) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Live demo: run the Evaluator on a sample question and show its real verdict, so
+// the per-dimension check isn't just described — you watch it happen.
+const _RC_COLOR: Record<string, string> = { ok: "#1d9e75", warn: "#c8881e", fail: "#d93025" };
+const _RC_STATUS: Record<string, [string, string]> = {
+  pass: ["Looks solid", "#1d9e75"], warn: ["Read with caveats", "#c8881e"],
+  repair: ["Self-corrected", "#1a73e8"], decline: ["Withheld", "#d93025"],
+};
+
+function EvaluatorDemo() {
+  const { coc } = useApp();
+  const [busy, setBusy] = useState(false);
+  const [q, setQ] = useState<string | null>(null);
+  const [res, setRes] = useState<AskResult | null>(null);
+
+  const examples: [string, string][] = [
+    ["A clean question", "What if we wait 3 years on a $15M program?"],
+    ["No budget given", "What does waiting 3 years cost?"],
+    ["Out of scope", "Which family on 5th Street will become homeless next year?"],
+  ];
+  const run = (question: string) => {
+    setQ(question); setBusy(true); setRes(null);
+    api.ask({ question, coc }).then(setRes).catch(() => setRes(null)).finally(() => setBusy(false));
+  };
+
+  const rc = res?.response_check;
+  const icon = (s: string) => s === "ok" ? <Icon.Check size={13} />
+    : s === "warn" ? <Icon.Info size={13} /> : <Icon.Slash size={13} />;
+
+  return (
+    <div style={{ marginTop: 16, borderTop: "1px solid var(--hairline)", paddingTop: 14 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".04em", textTransform: "uppercase",
+        color: "var(--ink-3)", marginBottom: 8 }}>See it run on a live answer</div>
+      <div className="declined-suggest" style={{ marginBottom: res || busy ? 14 : 0 }}>
+        {examples.map(([label, question]) => (
+          <button key={label} className="suggest-chip" disabled={busy}
+            style={{ opacity: busy ? 0.5 : 1 }} onClick={() => run(question)}>{label}</button>
+        ))}
+      </div>
+
+      {busy && (
+        <div className="muted" style={{ fontSize: "var(--fs-sm)", display: "flex", gap: 8, alignItems: "center" }}>
+          <Icon.Spinner size={14} /> Running the engine, then checking the answer…
+        </div>
+      )}
+
+      {!busy && res && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
+            <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>“{q}”</span>
+            <span className="pill" style={{ flex: "0 0 auto",
+              color: (_RC_STATUS[rc?.status ?? (res.declined ? "decline" : "pass")] || _RC_STATUS.pass)[1] }}>
+              {(_RC_STATUS[rc?.status ?? (res.declined ? "decline" : "pass")] || _RC_STATUS.pass)[0]}
+            </span>
+          </div>
+          {rc ? (
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, fontSize: "var(--fs-sm)" }}>
+              {rc.checks.map((c) => (
+                <li key={c.name} style={{ display: "flex", gap: 10, padding: "4px 0", alignItems: "baseline" }}>
+                  <span style={{ color: _RC_COLOR[c.status], flex: "0 0 auto", transform: "translateY(2px)" }}>{icon(c.status)}</span>
+                  <span style={{ flex: "0 0 116px", fontWeight: 600, textTransform: "capitalize" }}>{c.name.replace(/_/g, " ")}</span>
+                  <span style={{ flex: 1, color: "var(--ink-2)" }}>{c.detail}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            // out-of-scope / clarify: the deterministic safety rail caught it before the engine ran
+            <p className="muted" style={{ fontSize: "var(--fs-sm)", lineHeight: 1.55 }}>
+              <b style={{ color: "#d93025" }}>Scope check failed</b> — the engine never ran. {res.reason}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

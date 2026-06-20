@@ -9,6 +9,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from agent.env import load_dotenv  # noqa: E402
+load_dotenv()                       # pick up ANTHROPIC_API_KEY etc. from .env (no-override)
+
 from agent.orchestrator import WaitCostAgent  # noqa: E402
 
 

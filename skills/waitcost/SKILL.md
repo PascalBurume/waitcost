@@ -65,7 +65,7 @@ the `reason` — do not work around a decline.
 
 - `ask "<question>" [--coc CA-600]` — full agent loop (intent routing + brief)
 - `chart <name> [--coc --budget --delay]` — a render-ready chart spec (JSON)
-- `tools` — the capability catalog + counts (4 agents · capabilities · charts)
+- `tools` — the capability catalog + counts (5 agents · capabilities · charts)
 - `cocs` — the cities the engine supports
 - `guard --facts facts.json --text memo.txt` — self-check a memo for invented numbers
 

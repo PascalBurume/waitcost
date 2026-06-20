@@ -17,9 +17,9 @@ Lead with the agent thinking, not the slide deck. Every number on screen is repr
 - Walk the four-part answer judges look for, pointing at it on screen:
   - **Inputs (named, real):** Census ACS economic signals — median home value, income, poverty,
     density — for the county of each CoC.
-  - **Training signal (named, real):** HUD 2024 PIT homeless counts across **15 Continuums of Care**.
+  - **Training signal (named, real):** HUD 2024 PIT homeless counts across **17 Continuums of Care**.
   - **Model + metric:** Ridge selected over gradient-boosted stumps by **leave-one-CoC-out CV**;
-    honest held-out **R² ≈ 0.36** (not the in-sample 0.69 — show you didn't cherry-pick).
+    honest held-out **R² ≈ 0.45** (not the in-sample 0.89 — show you didn't cherry-pick).
   - **Explainability:** the **SHAP** table — *housing cost (median home value)* is the dominant
     driver, matching the "homelessness is a housing problem" literature.
 - Punchline: "The model's prediction **and its uncertainty band** set the simulator's inflow, so

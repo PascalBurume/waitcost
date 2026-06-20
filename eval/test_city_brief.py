@@ -136,9 +136,8 @@ def test_online_flag_degrades_when_fetch_fails(monkeypatch):
 def test_narration_with_invented_number_is_rejected(monkeypatch):
     # Force the generic narrator to emit a figure NOT in the facts; the guard must
     # reject it so the caller keeps the deterministic, grounded text.
-    monkeypatch.setenv("WAITCOST_PLANNER", "gemma")
-    monkeypatch.setattr(planner, "gemma_available", lambda: True)
-    monkeypatch.setattr(planner, "_ollama_generate",
+    monkeypatch.setenv("WAITCOST_PLANNER", "claude")
+    monkeypatch.setattr(planner.llm, "generate",
                         lambda *a, **k: "The city spent $999,123,456 on a brand-new program.")
     out = planner.narrate_grounded("prompt", "homeless_pit_total: 16868")
     assert out is None                         # invented number rejected

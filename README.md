@@ -28,56 +28,60 @@ model scores **17 US cities**.
 
 ```bash
 pip install -r requirements.txt
-ollama pull gemma4:e2b                                            # local LLM (planner + narrator); default
+export ANTHROPIC_API_KEY=sk-...                                  # Claude planner + narrator (default)
 python run_demo.py "What if we wait 3 years on a $15M program?"   # CLI agent
-pytest eval/verifier.py eval/test_*.py -q                         # 112 deterministic tests
-python eval/routing_benchmark.py                                  # 100-Q routing accuracy report
+pytest -q                                                         # deterministic test suite
+python eval/routing_benchmark.py                                  # 108-Q routing accuracy report
 python eval/chart_coverage.py                                     # every question -> a buildable chart
 streamlit run app/dashboard.py                                    # interactive dashboard (5 tabs)
 uvicorn api.main:app --reload --port 8000                         # JSON API -> http://localhost:8000/docs
 ```
 
-**Gemma is the default** (`gemma4:e2b`), offline (Ollama, `http://localhost:11434`) — no API key,
-no data leaves the machine. The planner runs in mode `WAITCOST_PLANNER` ∈:
+**Claude Sonnet 4.6 is the default brain.** It plans and narrates via the
+Anthropic API — but no PII is even possible (the system holds only public,
+aggregate HUD/Census data and refuses individual-level questions), so nothing
+sensitive can ever be sent. The planner runs in mode `WAITCOST_PLANNER` ∈:
 
-- `auto` *(default)* — Gemma-first; if Ollama is down or errors it falls back to
-  the rule-based planner **silently** (a fast liveness probe means no stall). The
-  result carries `planner` (`gemma` / `rule_based_fallback`) and `brief_author`
-  (`gemma` / `deterministic`) so you can *see* the LLM is live.
-- `rule` — pure deterministic, never touches Ollama (**the can't-fail demo mode**).
-- `gemma` — force Gemma (errors if Ollama is down).
+- `auto` *(default)* — Claude when a key is present; if there's no key or the API
+  errors it falls back to the rule-based planner **silently** (never stalls,
+  never crashes). The result carries `planner` (`claude` / `rule_based_fallback`)
+  and `brief_author` (`claude` / `deterministic`) so you can *see* which brain ran.
+- `rule` — pure deterministic, never touches the network (**the air-gapped,
+  can't-fail demo mode**).
+- `claude` — force Claude (errors loudly if the API is unreachable — to prove the path).
 
 ```bash
-export WAITCOST_PLANNER=rule    # guaranteed-reproducible, Ollama-free demo
+export WAITCOST_PLANNER=rule    # guaranteed-reproducible, network-free demo
+export WAITCOST_AGENT=toolloop  # (opt-in) Claude orchestrates the engine over multiple tool calls
 ```
 
-The local LLM (a) routes the question into a plan and (b) writes the one-page
-brief — but **every number stays the engine's**: a regex number-guard rejects any
-figure Gemma emits that the engine didn't compute, falling back to the
-deterministic brief. Gemma never invents or alters a headline figure.
+Claude (a) routes the question into a plan and (b) writes the one-page brief — but
+**every number stays the engine's**: a regex number-guard rejects any figure the
+model emits that the engine didn't compute, falling back to the deterministic
+brief. The model never invents or alters a headline figure.
 
 ## Routing — a layered router (LLM proposes, rules veto)
 
-Understanding *which* question a user is asking is the job we put the offline model on:
+Understanding *which* question a user is asking is the job we put the model on:
 
-1. **Offline LLM (primary)** — in `auto`/`gemma` mode Gemma classifies the intent
+1. **Claude (primary)** — in `auto`/`claude` mode Claude classifies the intent
    *semantically* from the registry's `when_to_use` + contrastive few-shots, so it
    disambiguates things keywords can't ("the ROI of the city's **plan**" → `roi`,
    not `care_plan`).
 2. **Deterministic safety rail (authoritative)** — individual / sub-CoC profiling is
    forced to `out_of_scope` no matter what the model says. The "never profile
    individuals" promise cannot depend on the LLM (`planner._apply_safety_rail`).
-3. **Rule fallback (reproducible)** — a registry-ordered regex walk when Ollama is
-   down, and the can't-fail demo mode. An unknown LLM label defers to it, not to a
+3. **Rule fallback (reproducible)** — a registry-ordered regex walk when no key is
+   set, and the can't-fail demo mode. An unknown LLM label defers to it, not to a
    blind default.
 
 Routing quality is **measured**, not assumed: a ~100-question, judge-style benchmark
 (`eval/routing_cases.py`) scores accuracy with a regression gate —
 **100% on the clear+paraphrase tier, 99% overall** in rule mode
 (`python eval/routing_benchmark.py`). And every question type yields a render-ready
-graphic — `eval/chart_coverage.py` proves 97/97 questions build a valid chart.
+graphic — `eval/chart_coverage.py` proves 108/108 questions build a valid chart.
 
-## Four agents
+## Five agents
 
 - **Analyst agent** (`agent/orchestrator.py`) — the loop: classify the question →
   call the right tools (the "sandbox" of deterministic Python) → narrate → log to
@@ -98,12 +102,21 @@ graphic — `eval/chart_coverage.py` proves 97/97 questions build a valid chart.
   framing people misread — the multi-billion 10-year baseline is mostly unavoidable; the
   timing decision only moves the smaller *cost-of-waiting* slice. It invents no figure
   (number-guarded); it rides along in every analytic answer and leads the decision brief.
+- **Evaluator agent** (`agent/evaluator.py`) — the post-answer critic that checks **every
+  answer before the user sees it**, across six dimensions (grounding, scope, parameter
+  fidelity, data confidence, chart↔text consistency, and an LLM question-match judge). It
+  can only flag / annotate / repair / decline — never alter an engine number. On a hard
+  failure it triggers a bounded **1-retry self-correction**, then declines rather than show
+  a confident wrong answer; uncertainty becomes a *warn* (a caveat), not a wrongful refusal.
+  Its verdict ships to the UI as a per-dimension **Response Check**. With confidence-gated
+  routing, when the LLM and rule routers disagree at low confidence the system **asks
+  instead of guessing** (`clarify`). See [EVALUATOR_AND_GUARDRAILS.md](EVALUATOR_AND_GUARDRAILS.md).
 
 The orchestrator is the single front door (`/ask`): quantitative questions run the
 simulator; `city_situation` / `care_plan` questions are handed off to the City Brief agent.
 
 Registry of capabilities is explicit (`agent/tools.py`, exposed at `/tools`):
-**4 agents · 20 capabilities · 19 chart builders · 2 offline retrieval tools.**
+**5 agents · 16 capabilities · 16 skills · 18 charts.**
 
 The planner is a **tool-calling router**: one question becomes a *list* of typed
 calls (`plan.calls`), so compound asks fan out (e.g. "$1M **and** $15M" → two
@@ -115,8 +128,9 @@ is ever silently dropped**. See [ARCHITECTURE.md](ARCHITECTURE.md).
 Every answerable question type is declared once in `agent/capabilities/specs.py`
 (its `when-to-use`, regex triggers, tier, handler, and chart). The structures that
 used to be hand-maintained in five places — `planner.INTENTS`, `classify_intent`,
-the Gemma `_PLAN_SYS` prompt, the orchestrator's intent dispatch, `tools.CAPABILITIES`,
-and `viz.INTENT_CHART` — are now *derived* from that registry, so they can't drift.
+the Claude `_PLAN_SYS` planner prompt, the orchestrator's intent dispatch,
+`tools.CAPABILITIES`, the **Anthropic tool schemas** (`caps.anthropic_tools()`), and
+`viz.INTENT_CHART` — are now *derived* from that registry, so they can't drift.
 Adding an analysis means one registry entry + one handler in `agent/handlers.py`.
 
 ## Run it as an installable Agent Skill
@@ -150,11 +164,14 @@ identical, not re-sampled).
 ## The AI inside
 
 - **Learned inflow model** (`model/inflow_model.py`): Ridge on real Census ACS →
-  HUD PIT across 17 cities, leave-one-CoC-out R²≈0.36, **exact additive SHAP**
+  HUD PIT across 17 cities, leave-one-CoC-out R²≈0.45, **exact additive SHAP**
   (housing cost is the top driver). Sets the simulator's inflow + its uncertainty.
 - **Face-validity backtest** (`model/backtest.py`): seed real 2023 PIT, reproduce
   observed 2024 within band (~4% error for CA-600).
-- **Offline Gemma planner** for natural-language understanding + narration.
+- **Claude Sonnet 4.6 planner + narrator** for natural-language understanding,
+  number-guarded prose, and (opt-in `WAITCOST_AGENT=toolloop`) a real tool-use loop
+  that orchestrates the engine over multiple steps — with a deterministic rule
+  fallback so the demo never depends on the network.
 
 ## Data — all real, all sourced (see `data/SOURCES.md`)
 
@@ -173,10 +190,10 @@ live API matched the panel exactly — 0 of 119 values differed by ≥5%. See `d
 config/params.yaml      calibrated CA-600 assumptions (source + confidence per value)
 model/                  simulate · montecarlo · cost · interventions · inflow_model · backtest · coc_registry · states
 analysis/               metrics (cost-of-waiting, break-even, compare, sensitivity) · viz (charts) · equity
-agent/                  skills (tools) · planner (Gemma + rule fallback) · orchestrator (loop) · tools (registry)
+agent/                  skills (tools) · planner (Claude + rule fallback) · llm (Anthropic provider seam) · orchestrator (loop) · tools (registry)
 api/                    FastAPI bridge: /ask · /ask/stream (SSE) · /brief/export (PDF/Word) · /compare-cities · …
 agent/retrieval.py      concept_qa + data_lookup (cited, offline, no engine)
-eval/                   rubric.json (weighted criteria) + verifier.py (112 tests total)
+eval/                   rubric.json (weighted criteria) + verifier.py (62 tests total)
 scripts/gen_questions.py  regenerates QUESTIONS.md from the capability registry
 app/dashboard.py        Streamlit UI (Ask · Explore · Visualize · Where's the AI · Governance)
 data/                   coc_panel.csv (17 cities) · equity_*.csv · SOURCES.md
@@ -197,3 +214,15 @@ run_demo.py             end-to-end CLI entry point
 - This tool **informs** a budget-timing tradeoff. It does **not** decide allocations
   or forecast individuals, surfaces equity at the population level only, and all
   outputs are ranges, not predictions.
+
+## Deploy
+
+Two ready-to-go paths (both run the Claude brain when `ANTHROPIC_API_KEY` is set, and fall
+back silently to the deterministic rule planner otherwise):
+
+- **Vercel** (full-stack: React static + FastAPI Python serverless, one URL) —
+  [VERCEL_DEPLOY.md](VERCEL_DEPLOY.md). Wired via `vercel.json` / `api/index.py`; needs the
+  Pro plan for the Claude-live function timeout (or rule mode on Hobby).
+- **Hugging Face Spaces** (single Docker container, FastAPI serves the app + API on
+  port 7860) — [DEPLOY_HF.md](DEPLOY_HF.md). No function-timeout limit. The root
+  `Dockerfile` builds it; set `ANTHROPIC_API_KEY` as a Space secret.

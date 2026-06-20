@@ -93,6 +93,11 @@ def _f(x, n=2):
     return round(float(x), n)
 
 
+def _blabel(m):
+    """Axis label for a budget given in $M — '$5.0B' for >= 1000, else '$15M'."""
+    return f"${m/1000:.1f}B" if m >= 1000 else f"${m:.0f}M"
+
+
 def _params(coc):
     from model.coc_registry import build_params_for_coc
     return build_params_for_coc(coc)
@@ -256,10 +261,10 @@ def budget_comparison(coc, budgets=None, delay=0, n_mc=200):
     p = _params(coc); budgets = budgets or [15.0, 50.0, 100.0]
     cb = metrics.compare_budgets(p, budgets, delay=delay, n_mc=n_mc)
     return {"name": "budget_comparison", "kind": "bar",
-            "title": "10-year cost by annual budget", "subtitle": f"lowest at ${cb['best_budget_musd']:.0f}M/yr",
+            "title": "10-year cost by annual budget", "subtitle": f"lowest at {_blabel(cb['best_budget_musd'])}/yr",
             "x_label": "Annual budget ($M)", "y_label": "10-yr cost ($M)",
             "series": [{"name": "10-yr cost", "color": "#1a73e8",
-                        "x": [f"${r['budget_musd']:.0f}M" for r in cb["budgets"]],
+                        "x": [_blabel(r["budget_musd"]) for r in cb["budgets"]],
                         "y": [_f(r["cum_cost_p50"] / 1e6, 1) for r in cb["budgets"]]}],
             "caption": "Compare what each budget buys over a decade.", "source": _SRC}
 
@@ -276,7 +281,7 @@ def cost_of_waiting_by_budget(coc, budgets=None, delay=3, n_mc=200):
             "subtitle": "extra 10-year public cost from delaying, per annual budget",
             "x_label": "Annual budget ($M)", "y_label": "Cost of waiting ($M)",
             "series": [{"name": "cost of waiting", "color": "#d93025",
-                        "x": [f"${r['budget_musd']:.0f}M" for r in rows],
+                        "x": [_blabel(r["budget_musd"]) for r in rows],
                         "y": [_f(r["extra_cost_median"] / 1e6, 1) for r in rows],
                         "y_lo": [_f(r["extra_cost_p10"] / 1e6, 1) for r in rows],
                         "y_hi": [_f(r["extra_cost_p90"] / 1e6, 1) for r in rows]}],

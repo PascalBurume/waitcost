@@ -17,32 +17,21 @@ Supported intents (everything the engine can actually compute):
 
 Two planners, same output shape:
   rule_based  — deterministic; the always-works fallback + the can't-fail demo mode.
-  gemma       — local Gemma 3n via Ollama (offline, no key).
+  claude      — Claude Sonnet 4.6 via the Anthropic API (frontier reasoning + prose).
 
 WAITCOST_PLANNER selects the mode (default **auto**):
-  auto   — Gemma-first; if Ollama is unreachable or errors, fall back to rules
-           silently (the new default — judges see the LLM is live, the demo never breaks).
-  gemma  — force Gemma; raise if Ollama is down (use to prove the LLM path).
-  rule   — pure deterministic; never touches Ollama (the guaranteed-reproducible demo).
+  auto   — Claude-first; if no API key is set or the call errors, fall back to rules
+           silently (the default — judges see the LLM is live, the demo never breaks).
+  claude — force Claude; raise if the API is unreachable (use to prove the LLM path).
+  rule   — pure deterministic; never touches the network (the air-gapped, reproducible
+           demo, and the guaranteed offline take).
 """
 import json
 import os
 import re
-import urllib.request
 
 from agent import capabilities as caps
-
-OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-# On-device coordinator. The planner's job is tiny (classify + extract) and it
-# also narrates the brief, so a capable on-device model helps. Default is
-# `gemma4:e2b`; override with GEMMA_MODEL (e.g. `gemma3n:e2b`, `gemma3n:e4b`).
-# resolve_model() falls back to any installed Gemma family if the exact tag isn't
-# pulled, so the local demo stays live regardless of which Gemma you have.
-GEMMA_MODEL = os.environ.get("GEMMA_MODEL", "gemma4:e2b")
-GEMMA_TIMEOUT = float(os.environ.get("GEMMA_TIMEOUT", "20"))
-# Short timeout for the liveness probe so `auto` skips Gemma instantly when
-# Ollama isn't running (instead of stalling on the full GEMMA_TIMEOUT).
-GEMMA_PROBE_TIMEOUT = float(os.environ.get("GEMMA_PROBE_TIMEOUT", "1.5"))
+from agent import llm
 
 # Derived from the capability registry (agent/capabilities) so it can never drift
 # from the routing / prompt / chart bindings. Membership is what callers rely on.
@@ -61,73 +50,67 @@ _DOMAIN_RE = re.compile(
 
 
 def _mode():
-    # Default is now `auto`: Gemma-first with an automatic, invisible rule fallback.
+    # Default is now `auto`: Claude-first with an automatic, invisible rule fallback.
     return os.environ.get("WAITCOST_PLANNER", "auto").lower()
-
-
-# --- Ollama liveness + model resolution ------------------------------------
-def _installed_models():
-    """Names of models Ollama currently has, or [] if Ollama is unreachable.
-
-    Uses a short timeout so an `auto`-mode probe never stalls the demo when
-    Ollama isn't running.
-    """
-    try:
-        with urllib.request.urlopen(OLLAMA_HOST + "/api/tags", timeout=GEMMA_PROBE_TIMEOUT) as r:
-            data = json.loads(r.read().decode("utf-8"))
-        return [m.get("name", "") for m in data.get("models", [])]
-    except Exception:
-        return []
-
-
-def resolve_model(installed=None):
-    """Pick an installed model to use for GEMMA_MODEL.
-
-    Prefer the exact configured tag; else any tag of the same family (e.g.
-    `gemma3n:e4b` when `gemma3n:e2b` was requested but not pulled); else any
-    locally-installed Gemma — so the local demo stays live even if the user
-    pulled a different Gemma tag than the documented default. Returns None when
-    no usable model is installed (Ollama down or no Gemma present).
-    """
-    models = _installed_models() if installed is None else installed
-    if not models:
-        return None
-    if GEMMA_MODEL in models:
-        return GEMMA_MODEL
-    base = GEMMA_MODEL.split(":")[0]
-    for m in models:
-        if m.split(":")[0] == base:
-            return m
-    for m in models:
-        if m.lower().startswith("gemma"):
-            return m
-    return None
-
-
-def gemma_available():
-    """True iff Ollama is up AND a usable Gemma model is installed."""
-    return resolve_model() is not None
 
 
 def plan(question, params):
     mode = _mode()
     if mode == "rule":
         result = _rule_based_plan(question, params)
-    elif mode == "gemma":
-        # Forced Gemma: let errors propagate (proves the LLM path is really live).
-        result = _gemma_plan(question, params)
+    elif mode == "claude":
+        # Forced Claude: let errors propagate (proves the LLM path is really live).
+        result = _claude_plan(question, params)
     else:
-        # auto (default): try Gemma only if it's actually reachable, else fall back
-        # silently — never stall, never crash.
+        # auto (default): use Claude when a key is present, else fall back silently
+        # to the deterministic rule planner — never stall, never crash.
         result = None
-        if gemma_available():
+        if llm.claude_available():
             try:
-                result = _gemma_plan(question, params)
+                result = _claude_plan(question, params)
             except Exception:
                 result = None
         if result is None:
             result = _rule_based_plan(question, params)
-    return _normalize_calls(question, _apply_safety_rail(question, result))
+    # Two routers: attach the deterministic classifier's read alongside the LLM's,
+    # so the confidence gate can ask instead of guess when they disagree.
+    result["rule_intent"] = classify_intent(question)
+    result = _apply_safety_rail(question, result)        # safety first — hard veto
+    result = _apply_confidence_gate(result)              # then: ask-don't-guess
+    return _normalize_calls(question, result)
+
+
+# --- confidence gate: ask, don't guess (runs AFTER the safety rail) ----------
+_ROUTE_CONF_THRESH = 0.6
+_SAFE_INTENTS = {"out_of_scope"}
+
+
+def _apply_confidence_gate(result):
+    """When the LLM and rule routers disagree on a NON-safety intent at low
+    confidence, route to `clarify` and surface both readings — instead of silently
+    committing to one. Safety always wins (the rail ran first and is never softened);
+    rule mode (no Claude confidence) skips the gate."""
+    if result.get("safety_override"):
+        return result
+    conf = result.get("route_confidence")
+    claude_intent = result.get("claude_intent")
+    if conf is None or claude_intent is None:        # rule mode / no LLM route
+        return result
+    final = result.get("intent")
+    rule_intent = result.get("rule_intent")
+    if final in _SAFE_INTENTS or rule_intent in _SAFE_INTENTS:
+        return result
+    disagree = rule_intent is not None and rule_intent != final
+    if disagree and conf < _ROUTE_CONF_THRESH:
+        seen, alts = set(), []
+        for it in (final, rule_intent, result.get("second_choice")):
+            if it and it not in seen and it not in _SAFE_INTENTS:
+                seen.add(it)
+                cap = caps.by_intent(it)
+                alts.append({"intent": it, "label": (cap.summary if cap else it)})
+        result["intent"] = "clarify"
+        result["route_alternatives"] = alts
+    return result
 
 
 # --- deterministic safety rail (authoritative over ANY planner, incl. the LLM) --
@@ -142,7 +125,7 @@ def _apply_safety_rail(question, result):
     """The 'never profile individuals or sub-CoC geographies' promise must not
     depend on the language model. If the deterministic rule flags the question as
     out-of-scope, we force out_of_scope no matter what the planner (especially
-    Gemma) chose. This is the layered router: an LLM proposes, a rule vetoes."""
+    Claude) chose. This is the layered router: an LLM proposes, a rule vetoes."""
     if result.get("intent") != "out_of_scope" and _rule_says_out_of_scope(question):
         result["intent"] = "out_of_scope"
         result["safety_override"] = True
@@ -155,8 +138,18 @@ def _extract_delay(q):
     return int(m.group(1)) if m else 5
 
 
+# Annual budgets are tracked in $M. Understand the common units so "$5B" and
+# "$500k" aren't silently dropped (which would fall back to default budgets).
+_BUDGET_UNIT = {"m": 1.0, "million": 1.0, "mm": 1.0,
+                "b": 1000.0, "billion": 1000.0, "bn": 1000.0,
+                "k": 0.001, "thousand": 0.001}
+_BUDGET_RE_UNIT = re.compile(
+    r"\$?\s*(\d+(?:\.\d+)?)\s*(million|billion|thousand|mm|bn|m|b|k)\b", re.I)
+
+
 def _extract_budgets(q):
-    return [float(x) for x in re.findall(r"\$?\s*(\d+(?:\.\d+)?)\s*(?:m\b|million)", q)]
+    """Annual budgets found in the text, normalized to $M (m/million=1, b/billion=×1000, k=÷1000)."""
+    return [round(float(n) * _BUDGET_UNIT[u.lower()], 6) for n, u in _BUDGET_RE_UNIT.findall(q)]
 
 
 def _distinct_budgets(q):
@@ -183,7 +176,7 @@ def _extract_delays(q):
 # --- completeness normalizer: one question -> a LIST of typed tool calls -----
 # A deterministic post-plan layer (mirrors _apply_safety_rail: a planner proposes,
 # a rule completes/vetoes). It re-reads the raw question for ALL parameters after
-# classification — independent of whether Gemma or the rules planned — and ensures
+# classification — independent of whether Claude or the rules planned — and ensures
 # every parsed value is COVERED by a call (no silent drop). Cardinality is N calls,
 # not list-valued args, so the executor stays uniform: "wait 3y on $1M and $15M"
 # becomes two `cost_of_waiting` calls.
@@ -215,8 +208,22 @@ def _normalize_calls(question, result):
     q = (question or "").lower()
     intent = result.get("intent")
     budgets = _distinct_budgets(q)
-    result["parsed_params"] = {"budgets": budgets, "delays": _extract_delays(q)}
+    delays = _extract_delays(q)
+    result["parsed_params"] = {"budgets": budgets, "delays": delays}
     notes = []
+
+    # No-default-without-saying-so: if the intent consumes a budget/delay and the
+    # user named none, the value is a default — flag it so the answer can say so
+    # (never silently answer an unasked question). Non-engine intents have no
+    # params, so this stays empty for them.
+    cap = caps.by_intent(intent)
+    cap_params = set(cap.params) if cap else set()
+    defaults = []
+    if ("budget_musd" in cap_params or "budgets" in cap_params) and not budgets:
+        defaults.append("a budget")
+    if "delay_years" in cap_params and not delays:
+        defaults.append("a delay")
+    result["defaults_used"] = defaults
 
     # Non-engine / safety intents are never swept or expanded — one call, as planned.
     if intent in ("out_of_scope", "greeting", "clarify") or len(budgets) < 2:
@@ -236,7 +243,7 @@ def _normalize_calls(question, result):
 
     # The user's chosen default for "$A and $B": answer the cost of waiting for EACH
     # budget. A waiting/delay framing reinterprets a rule-routed `compare_budgets`
-    # (the 2-budget trigger) as a cost_of_waiting sweep, so rule and Gemma modes agree
+    # (the 2-budget trigger) as a cost_of_waiting sweep, so rule and Claude modes agree
     # — and it wins even over a "compare" cue, because "compare the cost of waiting at
     # $A and $B" wants the figure for each, not the lowest-total-cost budget.
     if len(valid) >= 2 and waiting_cue:
@@ -296,24 +303,30 @@ def _rule_based_plan(question, params):
     }
 
 
-# --- offline Gemma planner (Ollama) ----------------------------------------
-# The system prompt is now GENERATED from the capability registry: each
-# capability supplies its own `when_to_use` (the intent meaning) and an optional
+# --- Claude planner (Anthropic API) ----------------------------------------
+# The system prompt is GENERATED from the capability registry: each capability
+# supplies its own `when_to_use` (the intent meaning) and an optional
 # `plan_example` (the few-shot). Adding a capability auto-updates this prompt —
-# no hand-editing here. This is the progressive-disclosure win.
+# no hand-editing here. One registry, three consumers (rule regex, this Claude
+# prompt, the Phase-2 tool schemas) — they can never drift. This is the
+# progressive-disclosure win.
 _PLAN_SYS_TEMPLATE = (
     "You convert a policymaker's question about a homelessness cost-of-inaction "
     "simulator into a JSON plan. Respond with ONLY JSON: "
     '{"intent": <one of %(intents)s>, "delay_years": <int>, '
-    '"budget_musd": <number>, "budgets": <array of numbers or null>}.\n'
+    '"budget_musd": <number>, "budgets": <array of numbers or null>, '
+    '"route_confidence": <0..1 how sure you are of the intent>, '
+    '"second_choice": <the next most likely intent, or null>}.\n'
     "intent meanings:\n%(meanings)s\n"
-    "delay_years default 5 if unstated; budget_musd default %(default)s if unstated.\n"
+    "delay_years default 5 if unstated; budget_musd default %(default)s if unstated. "
+    "Set route_confidence below 0.6 when the question is genuinely ambiguous between "
+    "two intents, and name that other intent as second_choice.\n"
     "Examples:\n%(examples)s"
 )
 
 
 def build_plan_system(default):
-    """Assemble the Gemma system prompt from the registry (progressive
+    """Assemble the planner system prompt from the registry (progressive
     disclosure: short menu of intents + their meanings + examples)."""
     return _PLAN_SYS_TEMPLATE % {
         "intents": list(caps.intents_tuple()),
@@ -323,33 +336,30 @@ def build_plan_system(default):
     }
 
 
-def _ollama_generate(prompt, fmt="json", temperature=0.0, num_predict=220):
-    # Use whatever Gemma tag is actually installed (falls back to the configured
-    # name if the probe can't list models, so a forced `gemma` mode still errors clearly).
-    model = resolve_model() or GEMMA_MODEL
-    body = json.dumps({
-        "model": model, "prompt": prompt, "format": fmt, "stream": False,
-        "options": {"temperature": temperature, "num_predict": num_predict},
-    }).encode("utf-8")
-    req = urllib.request.Request(OLLAMA_HOST + "/api/generate", data=body,
-                                 headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=GEMMA_TIMEOUT) as r:
-        return json.loads(r.read().decode("utf-8")).get("response", "")
-
-
-def _gemma_plan(question, params):
+def _claude_plan(question, params):
     default_budget = float(params["meta"].get("default_budget_musd", 10.0))
-    sys = build_plan_system(default_budget)
-    text = _ollama_generate(f"{sys}\n\nQ: \"{question}\"\nJSON:")
+    system = build_plan_system(default_budget)
+    text = llm.generate(system, f'Q: "{question}"\nJSON:',
+                        want_json=True, temperature=0.0, max_tokens=256)
+    if not text:
+        # No key / API error: raise so forced `claude` mode fails loudly and `auto`
+        # mode's try/except falls back to the rule planner.
+        raise RuntimeError("Claude planner returned no output")
     data = json.loads(text[text.find("{"): text.rfind("}") + 1])
-    intent = data.get("intent", "cost_of_waiting")
+    raw_intent = data.get("intent", "cost_of_waiting")
+    intent = raw_intent
     if intent not in INTENTS:
-        # Gemma returned an unknown label — don't blindly assume a cost analysis.
+        # Claude returned an unknown label — don't blindly assume a cost analysis.
         # Defer to the deterministic rule classifier (which routes off-topic to
         # `clarify` and in-scope-unmapped to `cost_of_waiting`). LLM proposes,
         # rules disambiguate — the two routers are complementary.
         intent = classify_intent(question)
     budgets = data.get("budgets")
+    second = data.get("second_choice")
+    try:
+        conf = float(data.get("route_confidence", 1.0))
+    except (TypeError, ValueError):
+        conf = 1.0
     return {
         "question": question,
         "intent": intent,
@@ -358,11 +368,16 @@ def _gemma_plan(question, params):
         "budgets": [float(b) for b in budgets] if isinstance(budgets, list) and len(budgets) >= 2 else None,
         "mix": None,
         "scenarios": ["status_quo", "act_now", "delay"],
-        "planner": "gemma",
+        "planner": "claude",
+        # Confidence-gating signals (used by _apply_confidence_gate). claude_intent
+        # is the model's own pick, preserved even if we deferred to the rules above.
+        "claude_intent": intent,
+        "route_confidence": max(0.0, min(1.0, conf)),
+        "second_choice": second if second in INTENTS else None,
     }
 
 
-# --- number-guard for any Gemma-authored prose -----------------------------
+# --- number-guard for any LLM-authored prose -------------------------------
 # Match money ($12, $12.3M, 1,234) and bare numbers so we can verify the LLM
 # only ever repeats figures we computed and handed it.
 _NUM_RE = re.compile(r"\d[\d,]*(?:\.\d+)?")
@@ -383,8 +398,9 @@ def _numbers_in(text):
 
 def numbers_are_grounded(text, allowed_text):
     """True iff every number in `text` also appears in `allowed_text` (the facts
-    we passed Gemma). This is the guard that stops the LLM inventing figures:
+    we passed the model). This is the guard that stops the LLM inventing figures:
     on any unseen number we reject the LLM prose and use the deterministic brief.
+    A more fluent writer makes this guard matter more, not less.
     """
     allowed = _numbers_in(allowed_text)
     # Tolerate years and the small integers (0-31) the model uses for prose
@@ -394,62 +410,60 @@ def numbers_are_grounded(text, allowed_text):
     return _numbers_in(text).issubset(allowed)
 
 
+# Steers the model toward an analyst's voice while the number-guard enforces that
+# every figure it writes was one we handed it.
+_NARRATOR_SYS = ("You are a careful city budget analyst. Use ONLY the figures you "
+                 "are given; never invent, round, or compute a new number.")
+
+
 def narrate_brief(facts):
-    """Feature ③ — let local Gemma WRITE the one-page memo from the engine's
-    computed `facts` (a dict of strings/numbers). Returns the memo markdown, or
-    None on any error / mode==rule / Ollama down / a failed number guard.
+    """Feature ③ — let Claude WRITE the one-page memo from the engine's computed
+    `facts` (a dict of strings/numbers). Returns the memo markdown, or None on
+    mode==rule / no key / API error / a failed number guard.
 
     The caller treats None as "use the deterministic write_brief markdown".
     """
     if _mode() == "rule":
         return None
-    if _mode() == "auto" and not gemma_available():
-        return None
     # Render the facts as a compact, unambiguous block; this is also the
     # whitelist of numbers the model is allowed to echo.
     fact_lines = "\n".join(f"- {k}: {v}" for k, v in facts.items())
     prompt = (
-        "You are a city budget analyst. Write a SHORT one-page decision memo "
-        "(<=200 words, markdown, with a '## Decision memo' heading) for a budget "
-        "director, using ONLY the figures provided below. Do NOT invent, round, "
-        "or compute any new number — every dollar figure and statistic in your "
-        "memo must appear verbatim in the FACTS. State the headline cost of "
-        "waiting and its range, name the top driver, mention the backtest error "
-        "as a credibility note, and end with the disclaimer that the tool informs "
-        "(does not decide) the timing.\n\nFACTS:\n" + fact_lines
+        "Write a SHORT one-page decision memo (<=200 words, markdown, with a "
+        "'## Decision memo' heading) for a city budget director, using ONLY the "
+        "figures provided below. Every dollar figure and statistic in your memo "
+        "must appear verbatim in the FACTS. State the headline cost of waiting and "
+        "its range, name the top driver, mention the backtest error as a "
+        "credibility note, and end with the disclaimer that the tool informs (does "
+        "not decide) the timing.\n\nFACTS:\n" + fact_lines
     )
-    try:
-        text = _ollama_generate(prompt, fmt="", temperature=0.2, num_predict=320).strip()
-    except Exception:
-        return None
-    # Strip stray SentencePiece word-boundary markers some Gemma builds emit.
-    text = text.replace("▁", " ").strip()
+    text = llm.generate(_NARRATOR_SYS, prompt, temperature=0.2, max_tokens=320)
     if not text:
         return None
-    # The critical guard: reject if Gemma emitted any number we didn't give it.
+    text = text.strip()
+    if not text:
+        return None
+    # The critical guard: reject if the model emitted any number we didn't give it.
     if not numbers_are_grounded(text, fact_lines):
         return None
     return text
 
 
 def narrate_grounded(prompt, allowed_facts_text):
-    """Generic number-guarded narration: run Gemma on `prompt`, but return the
+    """Generic number-guarded narration: run Claude on `prompt`, but return the
     prose ONLY if every figure in it also appears in `allowed_facts_text`. Returns
-    None on rule mode / Ollama down / empty / a failed number guard — the caller
-    then uses its deterministic template.
+    None on rule mode / no key / API error / empty / a failed number guard — the
+    caller then uses its deterministic template.
 
     This is the same guard as `narrate_brief`, lifted out so the CityBriefAgent can
-    let Gemma phrase a city's situation/plan without ever inventing a statistic.
+    let the model phrase a city's situation/plan without ever inventing a statistic.
     """
     if _mode() == "rule":
         return None
-    if _mode() == "auto" and not gemma_available():
+    text = llm.generate(_NARRATOR_SYS, prompt, temperature=0.2, max_tokens=320)
+    if not text:
         return None
-    try:
-        text = _ollama_generate(prompt, fmt="", temperature=0.2, num_predict=320).strip()
-    except Exception:
-        return None
-    text = text.replace("▁", " ").strip()
+    text = text.strip()
     if not text:
         return None
     if not numbers_are_grounded(text, allowed_facts_text):
@@ -458,18 +472,14 @@ def narrate_grounded(prompt, allowed_facts_text):
 
 
 def explain_brief(brief_markdown, max_sentences=3):
-    """Optional plain-English gloss from Gemma. Returns None if not enabled."""
+    """Optional plain-English gloss from Claude. Returns None if not enabled."""
     if _mode() == "rule":
         return None
-    if _mode() == "auto" and not gemma_available():
-        return None
-    try:
-        prompt = (
-            f"You are a policy analyst. In at most {max_sentences} plain sentences, "
-            "summarize the decision brief below for a city budget director. State the "
-            "headline figure and that the tool informs (does not decide) the timing. "
-            "Do not invent numbers.\n\n" + brief_markdown
-        )
-        return _ollama_generate(prompt, fmt="", temperature=0.2, num_predict=180).strip() or None
-    except Exception:
-        return None
+    prompt = (
+        f"In at most {max_sentences} plain sentences, summarize the decision brief "
+        "below for a city budget director. State the headline figure and that the "
+        "tool informs (does not decide) the timing. Do not invent numbers.\n\n"
+        + brief_markdown
+    )
+    text = llm.generate(_NARRATOR_SYS, prompt, temperature=0.2, max_tokens=200)
+    return text.strip() if text else None

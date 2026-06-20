@@ -1,7 +1,7 @@
 """Tool registry — the agent's function-calling catalog.
 
 This is the explicit list of capabilities the agent can invoke. The small
-offline planner (Gemma) only has to pick the right `name` and fill simple
+offline planner (Claude) only has to pick the right `name` and fill simple
 `params`; the deterministic Python behind each tool does the real computation
 (the "sandbox"), and the result is narrated back in English. Nothing here does
 maths in the language model.
@@ -45,11 +45,13 @@ SKILLS = [
 
 
 def registry_summary():
-    """Four agents: the analyst (plans + runs tools), the viz specialist (charts),
-    the city-brief agent (grounded, cited context), and the decision agent (turns the
-    scenario numbers into a plain-English recommendation)."""
+    """Five agents: the analyst (plans + runs tools), the viz specialist (charts),
+    the city-brief agent (grounded, cited context), the decision agent (turns the
+    scenario numbers into a plain-English recommendation), and the evaluator — the
+    post-answer critic that checks every answer before the user sees it."""
     from analysis.viz import CHART_CATALOG
-    return {"agents": 4, "agent_names": ["analyst", "visualization", "city_brief", "decision"],
+    return {"agents": 5,
+            "agent_names": ["analyst", "visualization", "city_brief", "decision", "evaluator"],
             "capabilities": len(CAPABILITIES), "skills": len(SKILLS),
             "charts": len(CHART_CATALOG),
             "capability_names": capability_names(), "skill_names": SKILLS,

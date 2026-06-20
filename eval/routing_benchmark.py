@@ -2,7 +2,7 @@
 
 Run directly to see a full report (rule mode by default):
     WAITCOST_PLANNER=rule .venv/bin/python eval/routing_benchmark.py
-    WAITCOST_PLANNER=gemma .venv/bin/python eval/routing_benchmark.py   # live LLM
+    WAITCOST_PLANNER=claude .venv/bin/python eval/routing_benchmark.py   # live LLM
 
 Importable: `score(classifier)` returns a structured result the pytest gate uses.
 """
@@ -23,11 +23,11 @@ def _rule_classifier(q):
     return planner.classify_intent(q)
 
 
-def _gemma_classifier(q):
+def _claude_classifier(q):
     from agent import planner
     # Build params just for the default budget; routing only needs meta.
     params = {"meta": {"default_budget_musd": 10.0}}
-    return planner._gemma_plan(q, params)["intent"]
+    return planner._claude_plan(q, params)["intent"]
 
 
 def score(classifier=None):
@@ -74,5 +74,5 @@ def _report(label, r):
 
 if __name__ == "__main__":
     mode = os.environ.get("WAITCOST_PLANNER", "rule").lower()
-    clf = _gemma_classifier if mode == "gemma" else _rule_classifier
+    clf = _claude_classifier if mode == "claude" else _rule_classifier
     _report(mode, score(clf))

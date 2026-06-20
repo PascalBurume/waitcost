@@ -5,10 +5,12 @@ Tier 0-1 actions run automatically; Tier 2+ (e.g. recommending an allocation)
 require explicit human approval — the human-in-the-loop gate.
 """
 import datetime
+import json
+import os
 import re
 from pathlib import Path
 
-from agent import skills, planner, handlers, capabilities
+from agent import skills, planner, handlers, capabilities, llm, evaluator
 
 ACTION_TIERS = {
     "fetch_hud_data": 0,
@@ -28,6 +30,7 @@ ACTION_TIERS = {
     "compare_mix": 1,
     "regional_cost_of_waiting": 1,
     "write_brief": 1,
+    "evaluate_response": 0,     # the Evaluator agent: post-answer critic (Tier 0)
     "optimize_allocation": 2,   # recommends an allocation -> needs approval
 }
 
@@ -51,6 +54,7 @@ SKILL_PRESENTATION = {
     "compare_mix": ("Comparing intervention mixes", "Prevention · rapid-rehousing · supportive"),
     "regional_cost_of_waiting": ("Ranking cities by cost of waiting", "Same engine across multiple CoCs"),
     "write_brief": ("Writing decision brief", "Narrative memo + JSON + CSV artifacts"),
+    "evaluate_response": ("Checking the answer", "Grounding · scope · parameters · data · chart"),
     "optimize_allocation": ("Recommending an allocation", "Tier 2 — requires human approval"),
 }
 
@@ -75,14 +79,14 @@ def _synthesize_sweep(intent, per_call, plan):
             cow = pc.get("cow")
             if not cow:
                 continue
-            rows.append(f"- **${pc['budget_musd']:,.0f}M/yr** → about {_fmt_usd(cow['extra_cost_median'])} "
+            rows.append(f"- **{handlers._musd(pc['budget_musd'])}/yr** → about {_fmt_usd(cow['extra_cost_median'])} "
                         f"more (80% range {_fmt_usd(cow['extra_cost_p10'])} – {_fmt_usd(cow['extra_cost_p90'])})")
         return (f"**Waiting {plan['delay_years']} years — cost of waiting by program size:**\n"
                 + "\n".join(rows)
                 + "\n\nThe direction (waiting costs more) holds at every budget; the magnitude scales "
                   "with program size.")
     # Generic fold for other single-budget intents: label each call's headline.
-    rows = [f"- **${pc['budget_musd']:,.0f}M/yr** — {pc['headline']}"
+    rows = [f"- **{handlers._musd(pc['budget_musd'])}/yr** — {pc['headline']}"
             for pc in per_call if pc.get("headline")]
     return "**Answered for each budget:**\n" + "\n".join(rows)
 
@@ -147,8 +151,11 @@ class WaitCostAgent:
 
     def _remember(self, text):
         stamp = datetime.datetime.now().isoformat(timespec="seconds")
-        with open(self.memory_path, "a") as f:
-            f.write(f"\n- [{stamp}] {text}")
+        try:
+            with open(self.memory_path, "a") as f:
+                f.write(f"\n- [{stamp}] {text}")
+        except OSError:
+            pass  # read-only filesystem (e.g. serverless) — the audit log is non-essential
 
     # --- intent -> tailored direct answer ------------------------------------
     def _direct_answer(self, params, plan, runs, comparison, drivers,
@@ -164,11 +171,106 @@ class WaitCostAgent:
             capabilities.by_intent("cost_of_waiting").handler
         return handler(ctx)
 
-    # --- facts handed to Gemma for the narrated brief (feature ③) -----------
+    # --- Phase-2: agentic reasoning trace (opt-in) ---------------------------
+    def _run_agentic_trace(self, question, params, the_plan, base_runs, drivers,
+                           backtest, effect_band, mix, approve_allocation):
+        """Let Claude orchestrate the SAME engine over multiple tool calls. Returns
+        {"summary": <the agent's synthesis>, "steps": [...]} or None. Every tool
+        returns a real engine number (grounded by construction), and the Tier-2 tool
+        is intercepted BEFORE it can execute. Tool calls + thinking summaries are
+        recorded in self.trajectory and streamed, so the agent's multi-step
+        reasoning shows up alongside the deterministic timeline."""
+        from analysis.viz import VizAgent
+        chart_catalog = VizAgent().list_charts()
+        chart_names = [c["name"] for c in chart_catalog]
+        # The viz specialist is exposed to the supervisor as one more tool: the agent
+        # PICKS the decision chart by name (from the real catalog); the chart is then
+        # built from the same engine output. Recorded in `chosen`, surfaced in the trace.
+        tools = capabilities.anthropic_tools() + [{
+            "name": "pick_chart",
+            "description": "Choose the single chart that best supports your synthesis. "
+                           "Options (name — when to use): "
+                           + "; ".join(f"{c['name']} — {c['when']}" for c in chart_catalog),
+            "input_schema": {
+                "type": "object",
+                "properties": {"chart": {"type": "string", "enum": chart_names,
+                                         "description": "The chart name to display."}},
+                "required": ["chart"],
+            },
+        }]
+        steps = []
+        chosen = {"chart": None}
+
+        def execute(name, args):
+            if name == "pick_chart":
+                chart = args.get("chart")
+                if chart not in chart_names:
+                    return f"Unknown chart {chart!r}. Choose one of: {', '.join(chart_names)}."
+                chosen["chart"] = chart
+                return f"Selected chart '{chart}' — it will be built from the engine output."
+            if name == "recommend_allocation":
+                # Tier-2 gate, BEFORE any computation: the agent wanted to act, the
+                # design stops it until a human approves. Raises TierViolation when
+                # not approved — the loop surfaces that as a tool error.
+                self._check_tier("optimize_allocation", approve=approve_allocation)
+                return "Allocation recommendation step approved by a human."
+            cap = capabilities.by_intent(name)
+            if cap is None or not (cap.runs_engine and cap.handler):
+                return f"No engine tool named {name!r}."
+            budget = float(args.get("budget_musd", the_plan.get("budget_musd", 10.0)))
+            delay = int(args.get("delay_years", the_plan.get("delay_years", 5)) or 0)
+            plan = {**the_plan, "intent": name, "budget_musd": budget, "delay_years": delay}
+            if isinstance(args.get("budgets"), list) and len(args["budgets"]) >= 2:
+                plan["budgets"] = [float(b) for b in args["budgets"]]
+            runs = {"status_quo": base_runs["status_quo"]}   # budget-independent; reuse
+            for key, sc in {
+                "act_now": skills.make_scenario(params, "Act now", delay=0, budget=budget, mix=mix),
+                "delay": skills.make_scenario(params, f"Delay {delay} years", delay=delay, budget=budget, mix=mix),
+            }.items():
+                self._check_tier("run_simulation", detail=f"agent · {name} · ${budget:,.0f}M/yr")
+                runs[key] = skills.run_simulation(params, sc)
+            comparison = skills.compare_scenarios(params, plan, runs)
+            ctx = handlers.AnswerContext(
+                params=params, plan=plan, runs=runs, comparison=comparison, drivers=drivers,
+                backtest=backtest, effect_band=effect_band, agent=self)
+            return cap.handler(ctx) or f"No result for {name}."
+
+        def on_event(kind, payload):
+            steps.append({"kind": kind, "payload": payload})
+            if self._on_step is None:
+                return
+            if kind == "thinking" and payload:
+                self._on_step({"skill": "agent_thinking", "tier": 0, "approved": False,
+                               "label": "Agent reasoning", "detail": str(payload)[:200],
+                               "status": "running", "kind": "thinking"})
+            elif kind == "tool_use":
+                name = payload.get("name", "tool")
+                self._on_step({"skill": name, "tier": ACTION_TIERS.get(name, 1),
+                               "approved": False, "label": f"Agent calls {name}",
+                               "detail": str(payload.get("input", "")), "status": "running",
+                               "kind": "tool_use"})
+
+        system = (
+            "You analyze a homelessness cost-of-inaction simulator for a city budget "
+            "director. NEVER compute or invent figures yourself — call a tool for every "
+            "number. Chain tools as needed (for example: cost_of_waiting, then "
+            "uncertainty, then compare_budgets), then write a short, plain-English "
+            "synthesis of the timing decision. The tool informs a budget-timing tradeoff; "
+            "it does not decide allocations or forecast individuals."
+        )
+        user = f'Question: "{question}"\nReason step by step, calling tools for every figure.'
+        system += (" When you have the figures, call pick_chart exactly once to choose "
+                   "the chart that best supports your synthesis.")
+        summary = llm.run_tool_loop(system, user, tools, execute, on_event=on_event)
+        if summary is None:
+            return None
+        return {"summary": summary, "steps": steps, "chosen_chart": chosen["chart"]}
+
+    # --- facts handed to Claude for the narrated brief (feature ③) -----------
     def _brief_facts(self, question, params, runs, comparison, drivers,
                      inflow_model, backtest, intent, direct):
         """Compact dict of ALREADY-COMPUTED figures. This doubles as the whitelist
-        of numbers Gemma is allowed to echo (the number guard rejects anything else)."""
+        of numbers Claude is allowed to echo (the number guard rejects anything else)."""
         def usd(x):
             return f"${x/1e6:,.1f}M"
 
@@ -203,8 +305,38 @@ class WaitCostAgent:
                                "allocations or forecast individuals. All figures are ranges.")
         return facts
 
+    # --- evaluator check 6: the LLM question-match judge ---------------------
+    def _question_match(self, question, out):
+        """LLM judge for 'does this answer THIS question?' (evaluator check 6).
+        Returns {"ok": bool, "reason": str}, or None when no judge is available
+        (no key / rule mode) — the evaluator then simply skips check 6, so the
+        offline path stays deterministic. Conservative by design (annotate-first):
+        only fails on a CLEAR mismatch, so it doesn't trigger needless re-runs."""
+        if not llm.claude_available():
+            return None
+        direct = (out.get("direct_answer") or "")[:600]
+        system = (
+            "You are a lenient relevance reviewer for a homelessness budget tool. Decide "
+            "ONLY whether the ANSWER is on the same TOPIC as the QUESTION — not whether the "
+            "numbers are right, not whether it's complete, not its tone. Be generous: a "
+            "cost-of-waiting answer to a cost-of-waiting question is a match even if it also "
+            "mentions a default budget, a range, or a recommendation. Set ok=false ONLY when "
+            "the answer is about a CLEARLY DIFFERENT topic than asked (e.g. asked for ROI, "
+            "got an equity breakdown). When unsure, ok=true. Respond with ONLY JSON: "
+            '{"ok": <true|false>, "reason": <short phrase>}.')
+        prompt = (f'QUESTION: "{question}"\nANSWER: "{direct}"\nJSON:')
+        text = llm.generate(system, prompt, want_json=True, temperature=0.0, max_tokens=120)
+        if not text:
+            return None
+        try:
+            data = json.loads(text[text.find("{"): text.rfind("}") + 1])
+            return {"ok": bool(data.get("ok", True)), "reason": str(data.get("reason", ""))[:200]}
+        except Exception:
+            return None   # unparseable judge → skip (don't block a real answer)
+
     # --- the agent loop ------------------------------------------------------
-    def answer(self, question, out_dir="outputs", approve_allocation=False, on_step=None):
+    def answer(self, question, out_dir="outputs", approve_allocation=False, on_step=None,
+               _repair_depth=0):
         self._on_step = on_step   # feature ①: stream each step as it runs
         # STAGE 1 — data acquisition
         self._check_tier("fetch_hud_data")
@@ -230,7 +362,14 @@ class WaitCostAgent:
         if the_plan.get("intent") in ("greeting", "clarify"):
             kind = the_plan["intent"]
             self._remember(f"{kind.upper()}: Q='{question}'")
-            if kind == "clarify":
+            alts = the_plan.get("route_alternatives")
+            if kind == "clarify" and alts:
+                # Confidence gate fired: the routers disagreed at low confidence, so
+                # we ASK instead of guessing — show the two readings as choices.
+                names = " or ".join(a["label"] for a in alts)
+                reason = (f"Your question could mean a couple of things — {names}. "
+                          "Which did you mean?")
+            elif kind == "clarify":
                 reason = ("I'm not sure which analysis you're after. I can estimate the cost of "
                           "waiting, break-even timing, savings from acting now, ROI, cost per person "
                           "helped, outcomes at the horizon, budget/mix comparisons, equity, or rank "
@@ -241,7 +380,8 @@ class WaitCostAgent:
                           "savings from acting now, ROI, cost per person, outcomes at the 10-year "
                           "horizon, or budget/mix comparisons.")
             return {"declined": True, "greeting": True, "intent": kind, "plan": the_plan,
-                    "reason": reason, "trajectory": self.trajectory}
+                    "reason": reason, "route_alternatives": alts,
+                    "trajectory": self.trajectory}
 
         # Scope check: decline questions the city-level engine cannot truthfully answer.
         if the_plan.get("intent") == "out_of_scope":
@@ -294,6 +434,15 @@ class WaitCostAgent:
         # STAGE 2 — processing / reasoning
         budget = the_plan["budget_musd"]
         mix = the_plan.get("mix")
+
+        # Parameter echo: surface the parsed reading back to the user ("I read this
+        # as: cost of waiting · 3 years · $15M · Los Angeles"), so a misparse is
+        # visible and one-click fixable instead of buried in the math.
+        _yrs = the_plan.get("delay_years")
+        _intent = the_plan.get("intent", "cost_of_waiting")
+        the_plan["param_echo"] = (f"{_intent.replace('_', ' ')} · {_yrs} year"
+                                  f"{'' if _yrs == 1 else 's'} · ${budget:g}M · "
+                                  f"{params['meta'].get('coc', '')}")
         scenario_objs = {
             "status_quo": skills.make_scenario(params, "Status quo (no new intervention)", budget=0.0),
             "act_now": skills.make_scenario(params, "Act now", delay=0, budget=budget, mix=mix),
@@ -377,6 +526,17 @@ class WaitCostAgent:
             if note and note not in direct:
                 direct = f"{direct}\n\n_{note}_"
 
+        # Phase-2 agentic reasoning trace (opt-in: WAITCOST_AGENT=toolloop). The
+        # deterministic pipeline above stays the authoritative answer; here Claude
+        # orchestrates the SAME engine over multiple tool calls so the multi-step
+        # reasoning is visible. Skipped entirely (no cost, no latency) by default.
+        agent_trace = None
+        if (os.environ.get("WAITCOST_AGENT", "single").lower() == "toolloop"
+                and llm.claude_available()):
+            agent_trace = self._run_agentic_trace(
+                question, params, the_plan, runs, drivers, backtest, effect_band,
+                mix, approve_allocation)
+
         # The decision agent turns the raw scenario numbers into a plain-English
         # recommendation a non-technical director can act on (act now / wait, with a
         # confidence on the DIRECTION and the baseline-vs-slice framing).
@@ -406,23 +566,23 @@ class WaitCostAgent:
                                    effect_band=effect_band, intent=intent, direct_answer=direct,
                                    decision=decision)
 
-        # Feature ③: let local Gemma WRITE the memo from the engine's numbers.
+        # Feature ③: let Claude WRITE the memo from the engine's numbers.
         # Every figure is number-guarded inside narrate_brief; on None we keep the
         # deterministic markdown. brief_author records which one the user sees.
         brief_markdown = brief["brief_markdown"]
         brief_author = "deterministic"
         facts = self._brief_facts(question, params, runs, comparison, drivers,
                                   inflow_model, backtest, intent, direct)
-        gemma_memo = planner.narrate_brief(facts)
-        if gemma_memo:
-            brief_markdown = gemma_memo
-            brief_author = "gemma"
+        llm_memo = planner.narrate_brief(facts)
+        if llm_memo:
+            brief_markdown = llm_memo
+            brief_author = "claude"
 
         # Single source of truth, whichever author wrote the body: the verdict
         # sentence is the decision agent's headline, cited verbatim. The
-        # deterministic brief already embeds it; a Gemma memo writes prose AROUND
+        # deterministic brief already embeds it; a Claude memo writes prose AROUND
         # the verdict but must never become the verdict — so if the citation is
-        # absent (Gemma path) we prepend it. The framing string is the idempotency
+        # absent (LLM path) we prepend it. The framing string is the idempotency
         # sentinel, so the deterministic path is never double-prepended.
         if decision and skills.RECOMMENDATION_FRAMING not in brief_markdown:
             brief_markdown = "\n".join(skills.verdict_citation(decision)) + "\n\n" + brief_markdown
@@ -435,7 +595,7 @@ class WaitCostAgent:
             f"| budget=${budget}M | vintage={params['meta']['data_vintage']} | {im_tag} "
             f"| brief={brief['md']}")
 
-        return {
+        out = {
             "plan": the_plan,
             "intent": intent,
             "direct_answer": direct,
@@ -451,5 +611,55 @@ class WaitCostAgent:
             "brief_markdown": brief_markdown,
             "brief_author": brief_author,
             "planner": the_plan["planner"],
+            "agent_trace": agent_trace,
             "trajectory": self.trajectory,
         }
+
+        # The 5th agent: critique the finished answer before the user sees it. The
+        # deterministic checks reuse the same guards the rest of the system uses, so
+        # this is belt-and-suspenders, not a new source of truth. Streamed as the
+        # final step (feature ①). `facts` is the engine whitelist for the grounding
+        # check; `question_match` (the LLM judge) is injected by `_question_match`.
+        self._check_tier("evaluate_response")
+        out["response_check"] = evaluator.evaluate(
+            question, out, params, facts=facts, llm_memo=llm_memo,
+            question_match=self._question_match(question, out))
+
+        # Bounded self-correction (1 retry). If the evaluator says `repair` (e.g. the
+        # question-match judge says we answered the wrong thing), re-plan ONCE with the
+        # repair hint appended, re-run, re-evaluate. Still failing → decline cleanly.
+        # The cap bounds latency/cost; the re-run is visible in the trajectory.
+        rc = out["response_check"]
+        if rc["status"] == "repair" and _repair_depth == 0:
+            self._remember(f"REPAIR: {rc.get('repair_hint')} | Q='{question}'")
+            retried = self.answer(f"{question}\n\n[reviewer note: {rc.get('repair_hint')}]",
+                                  out_dir=out_dir, approve_allocation=approve_allocation,
+                                  on_step=on_step, _repair_depth=1)
+            rrc = retried.get("response_check") or {}
+            if rrc.get("status") != "repair":
+                retried["repaired"] = True   # one re-plan fixed it — show the corrected answer
+                return retried
+            # Still flagged after one retry. DECLINE only on a HARD correctness failure
+            # (grounding / scope / chart). A lingering relevance DOUBT (question_match
+            # alone) must NOT become a wrongful refusal (F8) — show the answer with a
+            # caveat instead. Annotate-first: better a hedged real answer than a
+            # confident false refusal.
+            hard = {c["name"] for c in rrc.get("checks", []) if c["status"] == "fail"} \
+                & {"grounding", "chart_text", "scope"}
+            if not hard:
+                rrc["status"] = "warn"
+                rrc.setdefault("what_went_wrong", []).insert(
+                    0, "I wasn't fully certain this matches your question — here's my best answer; "
+                       "rephrase if it's off.")
+                retried["repaired"] = True
+                return retried
+            return {
+                "declined": True, "repaired": True, "intent": "clarify", "plan": the_plan,
+                "reason": ("I couldn't produce an answer I'm confident is correct for your "
+                           "question, so I'm not going to guess. Here's a clearer way to ask it."),
+                "response_check": {**rrc, "status": "decline",
+                                   "suggested_reformulation": rrc.get("suggested_reformulation")
+                                   or "what does waiting 3 years cost at $15M/yr?"},
+                "trajectory": self.trajectory,
+            }
+        return out

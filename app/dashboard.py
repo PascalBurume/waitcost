@@ -12,6 +12,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from agent.env import load_dotenv  # noqa: E402
+load_dotenv()   # pick up ANTHROPIC_API_KEY etc. from .env (no-override)
+
 import pandas as pd  # noqa: E402
 import plotly.graph_objects as go  # noqa: E402
 import streamlit as st  # noqa: E402
@@ -148,9 +151,10 @@ with st.sidebar:
     tot = max(prev + rrh + psh, 1e-9)
     mix = {"prevention": prev / tot, "rapid_rehousing": rrh / tot, "permanent_supportive_housing": psh / tot}
     st.divider()
-    use_gemma = st.toggle("Use offline Gemma planner", value=False,
-                          help="Gemma 3n via Ollama. Falls back to rule-based if unavailable.")
-    os.environ["WAITCOST_PLANNER"] = "gemma" if use_gemma else "rule"
+    use_claude = st.toggle("Use Claude Sonnet 4.6 planner", value=False,
+                           help="Claude Sonnet 4.6 via the Anthropic API (needs "
+                                "ANTHROPIC_API_KEY). Falls back to rule-based if unavailable.")
+    os.environ["WAITCOST_PLANNER"] = "claude" if use_claude else "rule"
 
 params = get_params(coc)
 st.title("WaitCost — The Cost of Doing Nothing")
@@ -195,7 +199,7 @@ with tab_ask:
                     st.info(f"Chart not available for this city: {e}")
             gloss = planner.explain_brief(result["brief_markdown"])
             if gloss:
-                st.info("🗣️ Gemma summary: " + gloss)
+                st.info("🗣️ Claude summary: " + gloss)
             with st.expander("Full decision brief"):
                 st.markdown(result["brief_markdown"])
 

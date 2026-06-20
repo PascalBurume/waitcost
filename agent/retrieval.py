@@ -4,7 +4,7 @@ based on?' (data_lookup).
 
 Same contract as the CityBriefAgent: every answer is grounded in a cited local
 source, carries the "general context — not the calibrated cost model" label, and
-stays fully offline (Gemma may only REPHRASE the curated text, number-guarded —
+stays fully offline (Claude may only REPHRASE the curated text, number-guarded —
 it can never introduce a fact or figure). These are registered as capabilities
 (kind=retrieval) so the router can route to them like any other tool.
 """
@@ -38,7 +38,7 @@ def _match_concept(question):
 
 def concept_qa(question, params=None):
     """Answer a definitional / 'why' question about a homelessness concept from the
-    cited knowledge file. Deterministic by default; Gemma may rephrase the curated
+    cited knowledge file. Deterministic by default; Claude may rephrase the curated
     definition (number-guarded against it). Returns a labelled, sourced dict."""
     c = _match_concept(question)
     if not c:
@@ -53,7 +53,7 @@ def concept_qa(question, params=None):
             "sources": [], "label": LABEL,
         }
     definition = c["definition"]
-    # Optional Gemma rephrase, guarded so it can only restate the curated definition.
+    # Optional Claude rephrase, guarded so it can only restate the curated definition.
     prompt = ("Rephrase the following definition in <=70 words of plain markdown for a city "
               "budget director. Do NOT add any fact, number, or claim not present in it.\n\n"
               f"DEFINITION:\n{definition}")

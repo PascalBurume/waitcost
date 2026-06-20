@@ -1,5 +1,7 @@
 # Lean runtime deps for the single-service cloud deploy (Hugging Face Space, Docker).
-# WAITCOST_PLANNER=rule → no LLM, no Ollama, no GPU. Streamlit/plotly/pytest/httpx
+# The image runs WAITCOST_PLANNER=auto: Claude Sonnet 4.6 when ANTHROPIC_API_KEY is
+# set (as an HF Space secret), else it falls back silently to the deterministic rule
+# planner — so the app works with or without the key. Streamlit/plotly/pytest/httpx
 # and all ML-training deps are intentionally excluded (not served at runtime).
 numpy>=1.24
 pandas>=2.0
@@ -8,3 +10,4 @@ fastapi>=0.110
 uvicorn[standard]>=0.27
 python-docx>=1.1
 reportlab>=4.0
+anthropic>=0.40        # Claude planner + narrator (used when ANTHROPIC_API_KEY is present)

@@ -131,7 +131,7 @@ class CityBriefAgent:
         det_situation = self._compose_situation(city_name, entry, indicators, situation_note, equity_line)
         det_plan_summary = self._compose_plan_summary(lead_agency, plan_title, situation_note)
 
-        # Optional Gemma phrasing, number-guarded against ONLY these facts.
+        # Optional Claude phrasing, number-guarded against ONLY these facts.
         allowed = self._fact_whitelist(indicators, situation_note, equity_line, plan_title)
         situation = planner.narrate_grounded(
             self._situation_prompt(city_name, entry, indicators, situation_note, equity_line),
@@ -197,9 +197,9 @@ class CityBriefAgent:
             head = f"**{plan_title}**. "
         return (head + note).strip() or "Care-plan details are pending verification."
 
-    # --- Gemma prompts + the number whitelist --------------------------------
+    # --- Claude prompts + the number whitelist --------------------------------
     def _fact_whitelist(self, ind, note, equity_line, plan_title):
-        """The exact text whose numbers Gemma is allowed to echo (number guard)."""
+        """The exact text whose numbers Claude is allowed to echo (number guard)."""
         # The rate is expressed "per 1,000 residents"; whitelist that denominator so
         # the number guard treats the 1,000 scale label as grounded (it's not a figure).
         lines = ["rate scale: per 1,000 residents"]

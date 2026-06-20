@@ -17,10 +17,36 @@ Designed for what happens *after* the demo — the grad-level differentiator.
 - Alert when divergence exceeds a set threshold — a signal that assumptions have
   gone stale and the model needs recalibration before further use.
 
+## The brain, and why no PII can leak
+- The planner/narrator is **Claude Sonnet 4.6** (via the Anthropic API); a deterministic
+  rule mode (`WAITCOST_PLANNER=rule`) is the air-gapped, no-network fallback and the
+  guaranteed-reproducible demo.
+- **No PII is even possible.** The system holds only public, aggregate HUD/Census data, and
+  the safety rail forbids individual-level questions — so nothing sensitive can ever be sent
+  to any API, by design rather than by promise. The engine still owns every number; the model
+  only phrases and routes.
+
 ## Action Tiers (autonomy bounds)
-- Tier 0: read data, sensitivity analysis — automatic.
+- Tier 0: read data, sensitivity analysis, **evaluate the answer** — automatic.
 - Tier 1: run simulations, write briefs — automatic.
 - Tier 2+: recommend or finalize an allocation — **human approval required**.
+
+## Answer-level checks (the Evaluator — the 5th agent) — ENFORCED IN CODE
+Before any answer reaches the user, the Evaluator (`agent/evaluator.py`) checks it across six
+dimensions — deterministic code for the hard guarantees, an LLM judge only for relevance:
+- **Grounding** — every figure in an LLM-authored memo must trace to the engine
+  (`planner.numbers_are_grounded`); else the deterministic brief is used.
+- **Scope** — re-runs the safety rail; the engine must not have answered an individual/sub-CoC question.
+- **Parameter fidelity** — flags any default-used / dropped value (no silent defaults; the parsed
+  reading is echoed back to the user).
+- **Data confidence** — labels non-calibrated cities "illustrative" and widens the read.
+- **Chart–text consistency** — the headline figure must match the engine output.
+- **Question-match** (LLM judge) — does the answer address the question actually asked?
+On a hard failure the system **self-corrects once** (re-plan with a repair hint), then **declines**
+rather than show a confident wrong answer. Confidence-gated routing **asks instead of guessing**
+when the LLM and rule routers disagree at low confidence. The verdict is surfaced to the user as a
+per-dimension **Response Check** panel — when the AI is unsure, the user is told *what* and *why*.
+Covered by `eval/test_evaluator.py`.
 
 ## Bypass conditions (when NOT to use) — ENFORCED IN CODE
 - Input data for a population is too thin to calibrate a credible transition rate.
@@ -38,7 +64,17 @@ Designed for what happens *after* the demo — the grad-level differentiator.
   `scripts/backtest.py`, `test_backtest_brackets_observed_2024`). Re-run each PIT release.
 
 ## Responsible-AI risk register (F-taxonomy)
-- F3 Privacy: aggregate CoC data only; no individual-level records.
-- F4 Robustness: a crafted prompt cannot override model limits or the approval gate.
-- F6 Transparency: every figure ships with assumptions + uncertainty.
-- F8 Over-caution: do not refuse legitimate scenarios (over-refusal is also a failure).
+- **F1 Accuracy / invented numbers:** the engine owns every figure; the number-guard rejects any
+  number the model didn't receive (`numbers_are_grounded`), and the Evaluator re-checks grounding.
+- **F3 Privacy:** aggregate CoC data only; no individual-level records — so no PII can reach the API.
+  The deterministic safety rail forces `out_of_scope`, and the Evaluator re-verifies scope.
+- **F4 Robustness:** a crafted prompt cannot override the safety rail (a rule veto, not the LLM) or
+  the Tier-2 approval gate; the Evaluator independently re-checks both downstream of the model.
+- **F6 Transparency:** every figure ships with assumptions + uncertainty, the parsed reading is
+  echoed back, and the per-dimension Response Check shows what was checked and what (if anything) is off.
+- **F8 Over-caution:** the Evaluator is **annotate-first** — uncertainty becomes a *warn* (answer shown
+  with a caveat), and a lingering relevance doubt is downgraded to a warning, never a wrongful refusal;
+  decline is reserved for true scope/data/correctness violations. Tested for over-refusal.
+
+A fuller failure-mode register (who is harmed + the specific design choice that reduces it) is in
+[EVALUATOR_AND_GUARDRAILS.md](EVALUATOR_AND_GUARDRAILS.md).

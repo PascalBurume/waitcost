@@ -11,7 +11,7 @@ demo phrasings. Each case is tagged:
                miss some, and the benchmark reports them separately.
 
 Used by eval/test_routing_benchmark.py (rule mode, deterministic) and runnable
-live against Gemma to show the LLM beats the regex on the collision tier.
+live against Claude to show the LLM beats the regex on the collision tier.
 """
 
 # (question, expected_intent, kind)

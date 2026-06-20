@@ -96,15 +96,15 @@ headline numbers. This is a strong "wow" landing/overview view.
 - Headline (wait 3 years on a $15M program): **cost of waiting ≈ $345.6M more** over 10 years
   (80% range **$282M–$411M**); status-quo 10-yr public cost ≈ **$49.8B** (range $39.7B–$63.9B);
   acting now saves vs nothing.
-- Learned model: **Ridge, held-out (leave-one-CoC-out) R² ≈ 0.36**; top **SHAP** driver =
-  *median home value*; model-predicted inflow **2,817/mo** vs **HUD SPM 2,485/mo** (~13% apart).
+- Learned model: **Ridge, held-out (leave-one-CoC-out) R² ≈ 0.45**; top **SHAP** driver =
+  *median home value*; model-predicted inflow **2,544/mo** vs **HUD SPM 2,485/mo** (~2% apart).
 - Backtest: predicted 2024 ≈ **68,500** (range 65,006–72,536) vs **observed 71,201** (~4% error,
   inside the band).
 - Equity (over-representation among the homeless vs population share): **Los Angeles — Black 4.0×**;
   **Minneapolis — Native American/Alaska Native 10.1×**; **Chicago — Hispanic 2.45×**; **Seattle —
   AIAN 4.5×**. LA unsheltered-rate by group: Black 58.9%, White 77.7%, AIAN 84.8%.
-- System facts to surface in the UI: **17 cities**, **4 AI agents** (analyst + visualization +
-  city-brief + decision), **18 charts**, runs **fully offline**.
+- System facts to surface in the UI: **17 cities**, **5 AI agents** (analyst + visualization +
+  city-brief + decision + evaluator), **18 charts**, runs **fully offline**.
 
 ## Backend it will wire to (so design realistic states)
 JSON API endpoints already exist: `POST /ask`, `POST /scenario`, `GET /model`, `GET /backtest`,

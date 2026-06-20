@@ -55,7 +55,7 @@ agent" panel on the **Governance** screen.
   - **deterministic checks** — the verifier count. Don't run pytest live; read a cached number from a small
     generated file (e.g. `eval/last_run.json`, written by a one-line make/script) or hard-read the known total,
     and label it "39/39 deterministic checks".
-  - **registry** — include `agent/tools.registry_summary()` (4 agents · 16 capabilities · 18 charts) for context.
+  - **registry** — include `agent/tools.registry_summary()` (5 agents · 16 capabilities · 16 skills · 18 charts) for context.
 - Keep it well under ~1s; if routing over all cases is slow, cache to `eval/eval_summary.json` and serve that.
 
 **Frontend**

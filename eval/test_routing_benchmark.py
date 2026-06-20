@@ -53,25 +53,26 @@ def test_safety_rail_does_not_touch_aggregate_cost_per_person():
     assert not p.get("safety_override")
 
 
-# --- Gemma robustness: LLM proposes, rules disambiguate/veto --------------------
-def _force_gemma(monkeypatch, response_json):
-    monkeypatch.setenv("WAITCOST_PLANNER", "gemma")
-    monkeypatch.setattr(planner, "_ollama_generate", lambda *a, **k: response_json)
+# --- LLM robustness: Claude proposes, rules disambiguate/veto -------------------
+def _force_claude(monkeypatch, response_json):
+    monkeypatch.setenv("WAITCOST_PLANNER", "claude")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setattr(planner.llm, "generate", lambda *a, **k: response_json)
 
 
-def test_gemma_invalid_intent_falls_back_to_rules(monkeypatch):
+def test_llm_invalid_intent_falls_back_to_rules(monkeypatch):
     """An unparseable LLM label defers to the deterministic classifier, not a blind
-    cost_of_waiting. Here Gemma emits a nonsense intent for an off-topic question →
+    cost_of_waiting. Here Claude emits a nonsense intent for an off-topic question →
     rules route it to clarify."""
-    _force_gemma(monkeypatch, '{"intent":"banana","delay_years":0,"budget_musd":10,"budgets":null}')
+    _force_claude(monkeypatch, '{"intent":"banana","delay_years":0,"budget_musd":10,"budgets":null}')
     params = {"meta": {"default_budget_musd": 10.0}}
     assert planner.plan("What is the capital of France?", params)["intent"] == "clarify"
 
 
-def test_gemma_cannot_override_the_safety_rail(monkeypatch):
+def test_llm_cannot_override_the_safety_rail(monkeypatch):
     """Even if the LLM confidently mislabels an individual-profiling question as a
     care_plan, the deterministic rail forces out_of_scope."""
-    _force_gemma(monkeypatch, '{"intent":"care_plan","delay_years":0,"budget_musd":10,"budgets":null}')
+    _force_claude(monkeypatch, '{"intent":"care_plan","delay_years":0,"budget_musd":10,"budgets":null}')
     params = {"meta": {"default_budget_musd": 10.0}}
     p = planner.plan("What's the plan for the family at 12 Elm Street?", params)
     assert p["intent"] == "out_of_scope" and p.get("safety_override")

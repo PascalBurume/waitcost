@@ -261,13 +261,31 @@ export interface Decision {
   narrated_by?: string;
 }
 
+// The Evaluator agent (5th agent): a per-dimension check of the answer, run before
+// the user sees it. status drives the panel: pass (green) / warn (yellow caveats) /
+// repair (self-corrected) / decline (refused, with a suggested reformulation).
+export interface ResponseCheck {
+  status: "pass" | "warn" | "repair" | "decline";
+  confidence: "high" | "medium" | "low";
+  checks: { name: string; status: "ok" | "warn" | "fail"; detail: string }[];
+  what_went_wrong: string[];
+  repair_hint: string | null;
+  suggested_reformulation: string | null;
+}
+
 export interface AskResult {
   declined?: boolean;
   out_of_scope?: boolean;
   greeting?: boolean;
   reason?: string;
-  plan?: { intent: string; delay_years: number; budget_musd: number; planner: string };
+  plan?: { intent: string; delay_years: number; budget_musd: number; planner: string;
+           param_echo?: string; defaults_used?: string[] };
   intent?: string;
+  // Evaluator agent: per-dimension check of the answer before it's shown.
+  response_check?: ResponseCheck;
+  // Confidence-gated routing: when the routers disagree, the two readings to pick from.
+  route_alternatives?: { intent: string; label: string }[];
+  repaired?: boolean;
   direct_answer?: string;
   recommended_chart?: string;
   comparison?: any;

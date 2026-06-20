@@ -2,7 +2,7 @@
 
 Before this, a single intent's knowledge was duplicated across five structures
 in ~seven files: planner.INTENTS, planner.classify_intent (regex), the
-hand-written planner._PLAN_SYS Gemma prompt, orchestrator._direct_answer (the
+hand-written planner._PLAN_SYS Claude prompt, orchestrator._direct_answer (the
 if/elif chain), tools.CAPABILITIES, and viz.INTENT_CHART. Adding one analysis
 meant editing all of them and keeping them in sync by hand.
 
@@ -123,12 +123,47 @@ def capabilities_catalog() -> list:
     return [{k: v for k, v in r.items() if k != "_order"} for r in rows]
 
 
+# JSON-schema fragments for the params a capability can accept. The Phase-2 tool
+# loop derives each tool's input_schema from `cap.params`, so the Anthropic tool
+# set is generated from the SAME registry as routing and the planner prompt — a
+# third consumer that can never drift from the intents.
+_PARAM_SCHEMA = {
+    "budget_musd": {"type": "number",
+                    "description": "Annual program budget in millions of USD."},
+    "delay_years": {"type": "integer",
+                    "description": "Years to wait before acting (0 = act now)."},
+    "budgets": {"type": "array", "items": {"type": "number"},
+                "description": "Two or more annual budgets in $M to compare."},
+    "coc": {"type": "string",
+            "description": "Continuum-of-Care code, e.g. CA-600."},
+}
+
+
+def anthropic_tools() -> list:
+    """Anthropic tool schemas for the engine-running, handler-backed capabilities
+    (the Phase-2 tool-use loop). `name` is the intent, `description` is its
+    `when_to_use`, and the input schema is derived from `cap.params`. Required is
+    left empty: the orchestrator fills any missing arg from the canonical plan, so
+    a tool call with partial args still runs."""
+    tools = []
+    for c in REGISTRY:
+        if not (c.runs_engine and c.handler):
+            continue   # skip greeting/clarify/out_of_scope and retrieval-only intents
+        props = {p: _PARAM_SCHEMA[p] for p in c.params if p in _PARAM_SCHEMA}
+        tools.append({
+            "name": c.intent,
+            "description": c.when_to_use,
+            "input_schema": {"type": "object", "properties": props, "required": []},
+        })
+    return tools
+
+
 def plan_meanings() -> str:
-    """`intent=meaning` lines for the generated Gemma system prompt."""
+    """`intent=meaning` lines for the generated planner system prompt."""
     return "\n".join(f"{c.intent}={c.when_to_use}" for c in REGISTRY)
 
 
 def plan_examples(default) -> str:
-    """The few-shot Q->JSON examples for the generated Gemma system prompt."""
+    """The few-shot Q->JSON examples for the generated Claude system prompt."""
     return "\n".join(c.plan_example % {"default": default}
                      for c in REGISTRY if c.plan_example)

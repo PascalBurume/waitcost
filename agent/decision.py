@@ -12,7 +12,7 @@ that gap. It reads the already-computed scenarios and:
     (the cost of waiting), and THAT is the number to look at;
   * names the break-even deadline in plain words.
 
-It invents no figure — every number traces to the engine; Gemma may only phrase it
+It invents no figure — every number traces to the engine; Claude may only phrase it
 (number-guarded), else a deterministic template is used.
 """
 
@@ -165,11 +165,11 @@ class DecisionAgent:
 
         # `headline` is the single source of truth for the verdict sentence: it is
         # computed exactly once (above), shown verbatim on the Recommendation card,
-        # and quoted verbatim by the brief (skills.verdict_citation). Gemma may
+        # and quoted verbatim by the brief (skills.verdict_citation). Claude may
         # rephrase the *bullets* in `plain_summary` below — it must never touch
         # `headline`, so the card and the brief can never disagree on the verdict.
         #
-        # Optional Gemma phrasing of the summary, number-guarded against ONLY the
+        # Optional Claude phrasing of the summary, number-guarded against ONLY the
         # figures above; on any unseen number we keep the deterministic template.
         try:
             from agent import planner
@@ -191,7 +191,7 @@ class DecisionAgent:
             narrated = planner.narrate_grounded(prompt, allowed)
             if narrated:
                 decision["plain_summary"] = narrated
-                decision["narrated_by"] = "gemma"
+                decision["narrated_by"] = "claude"
         except Exception:
             pass
 

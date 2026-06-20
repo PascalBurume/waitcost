@@ -38,6 +38,11 @@ def _usd(x):
     return f"${x/1e6:,.1f}M"
 
 
+def _musd(m):
+    """Format a budget given in $M, reading naturally at scale: '$5.0B' for >= 1000, else '$15M'."""
+    return f"${m/1000:,.1f}B" if m >= 1000 else f"${m:,.0f}M"
+
+
 def _coc(params):
     m = re.search(r"([A-Z]{2}-\d{3})", params["meta"].get("coc", ""))
     return m.group(1) if m else "CA-600"
@@ -55,7 +60,7 @@ def roi(ctx: AnswerContext):
         hi = metrics.benefit_cost_ratio(sv["savings_p90"], spend)
         band = (f" (80% range {lo:.1f}–{hi:.1f})" if lo is not None and hi is not None else "")
         return (f"**Every $1 invested now returns about ${ratio:.1f}** in avoided public cost "
-                f"over {hy} years at ${budget:.0f}M/yr{band}.")
+                f"over {hy} years at {_musd(budget)}/yr{band}.")
     return (f"**At ${budget:.0f}M/yr the program does not pay back over {hy} years** "
             f"at this city's scale (benefit-cost ratio below 1). Try a smaller budget or compare "
             f"budgets to find where the return turns positive.")
@@ -110,7 +115,7 @@ def regional(ctx: AnswerContext):
     rows = " · ".join(f"{r['coc']} {_usd(r['cost_of_waiting_musd']*1e6)}" for r in top)
     lead = top[0] if top else None
     return (f"**Across {len(reg['cities'])} cities, waiting {delay} years costs the most in "
-            f"{lead['name']}** (about {_usd(lead['cost_of_waiting_musd']*1e6)} at ${budget:.0f}M/yr). "
+            f"{lead['name']}** (about {_usd(lead['cost_of_waiting_musd']*1e6)} at {_musd(budget)}/yr). "
             f"Ranked cost of waiting: {rows}." if lead else
             "Regional ranking is unavailable right now.")
 
@@ -159,8 +164,8 @@ def compare_budgets(ctx: AnswerContext):
     budgets = plan.get("budgets") or [15.0, 50.0, 100.0]
     ctx.agent._check_tier("compare_budgets")
     cb = skills.compare_budgets(p, budgets, delay=plan.get("delay_years", 0))
-    rows = " · ".join(f"${r['budget_musd']:.0f}M → {_usd(r['cum_cost_p50'])}" for r in cb["budgets"])
-    return (f"**Lowest 10-year public cost at ${cb['best_budget_musd']:.0f}M/yr.** "
+    rows = " · ".join(f"{_musd(r['budget_musd'])} → {_usd(r['cum_cost_p50'])}" for r in cb["budgets"])
+    return (f"**Lowest 10-year public cost at {_musd(cb['best_budget_musd'])}/yr.** "
             f"10-year cost (P50) by budget: {rows}.")
 
 
@@ -170,7 +175,7 @@ def compare_mix(ctx: AnswerContext):
     cm = skills.compare_mix(p, plan.get("budget_musd", 50.0), delay=plan.get("delay_years", 0))
     rows = " · ".join(f"{r['mix']} → {_usd(r['cum_cost_p50'])}" for r in cm["mixes"])
     return (f"**A '{cm['best_mix']}' mix gives the lowest 10-year cost** at "
-            f"${cm['budget_musd']:.0f}M/yr. 10-year cost (P50) by mix: {rows}.")
+            f"{_musd(cm['budget_musd'])}/yr. 10-year cost (P50) by mix: {rows}.")
 
 
 def equity(ctx: AnswerContext):

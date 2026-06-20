@@ -16,6 +16,7 @@ const GROUP_COLOR: Record<string, string> = {
   at_risk: "var(--viz-neutral)",
   housed_stable: "#cfd6dc",
   exited_positive: "#cfd6dc",
+  program_spend: "#1a73e8",   // your investment — distinct from the homelessness-cost slices
 };
 
 function polar(cx: number, cy: number, r: number, a: number) {
@@ -60,7 +61,7 @@ export function CostDonut({ composition }: { composition?: Composition | null })
         ))}
         <text x={cx} y={cy - 5} textAnchor="middle" fontSize="25" fontWeight="800" fill="var(--ink)"
           style={{ fontVariantNumeric: "tabular-nums" }}>{fmtB(total)}</text>
-        <text x={cx} y={cy + 16} textAnchor="middle" fontSize="11.5" fill="var(--ink-3)">this program · 10 yrs</text>
+        <text x={cx} y={cy + 16} textAnchor="middle" fontSize="11.5" fill="var(--ink-3)">if you act now · 10 yrs</text>
       </svg>
       <div style={{ flex: 1, minWidth: 230 }}>
         <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
@@ -82,8 +83,10 @@ export function CostDonut({ composition }: { composition?: Composition | null })
           </div>
           <div style={{ fontSize: 12, color: "var(--ink-2)", marginTop: 5 }}>
             This program costs <b>{fmtB(total)}</b> over 10 years —{" "}
-            {saves > 0
+            {saves > baseline * 0.005
               ? <span><b style={{ color: SAVED }}>saves {fmtMusd(saves)}</b> vs. doing nothing ({fmtB(baseline)}).</span>
+              : saves < -baseline * 0.005
+              ? <span><b style={{ color: "var(--viz-wait-2)" }}>costs {fmtMusd(-saves)} more</b> than doing nothing ({fmtB(baseline)}) — this budget over-scales the problem; try a smaller one.</span>
               : <span>doing nothing also costs {fmtB(baseline)}. Fund a program to start saving.</span>}
           </div>
         </div>

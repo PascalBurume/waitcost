@@ -1,5 +1,7 @@
 # WaitCost — Finalize Brief (Gemma-default + 4 features)
 
+> **⚠️ HISTORICAL — SUPERSEDED.** This was the Gemma-era build brief. WaitCost has since migrated its brain to **Claude Sonnet 4.6** (planner + narrator), added a 5th agent (the Evaluator), and removed the Gemma/Ollama path entirely. The deterministic `WAITCOST_PLANNER=rule` fallback described here still exists. See `README.md`, `ARCHITECTURE.md`, and `GOVERNANCE.md` for the current system. Kept for provenance only.
+
 **For the coding agent.** Finish the WaitCost backend/agent for the demo: make the local Gemma model
 the default planner *and* narrator, and add four features. This file is the spec — read it fully, then
 build in the ranked order in §3. The frontend brief is separate (`IMPLEMENTATION.md`); coordinate the

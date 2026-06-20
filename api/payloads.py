@@ -78,7 +78,7 @@ def city_brief_payload(coc="CA-600"):
     """Grounded city homelessness brief from the THIRD agent (CityBriefAgent).
     Qualitative context + citations — explicitly NOT the calibrated cost model."""
     from agent.city_brief import CityBriefAgent
-    agent = CityBriefAgent(memory_path=os.path.join(REPO, "MEMORY.md"))
+    agent = CityBriefAgent(memory_path=MEMORY_PATH)
     return jsonable(agent.brief(coc))
 
 
@@ -218,22 +218,37 @@ def params_payload():
 
 _COMP_GROUP = {"chronic_unsheltered": "Chronically unsheltered", "unsheltered": "Unsheltered",
                "sheltered": "Sheltered", "at_risk": "At-risk", "housed_stable": "Housed (stable)",
-               "exited_positive": "Exited"}
+               "exited_positive": "Exited", "program_spend": "Program spend (your budget)"}
 
 
 def _composition_payload(params, scenario, total_usd, baseline_usd):
-    """Where a scenario's 10-yr public cost goes, by group. The split is
-    deterministic; it's scaled so the total matches the on-screen Monte-Carlo P50.
-    `baseline_usd` (the do-nothing cost) lets the UI show how much the scenario
-    saves vs. doing nothing — so the donut reacts live as the program is tuned."""
-    comp = metrics.cost_composition(params, scenario)
-    total = comp["total"]
-    scale = (total_usd / total) if total else 1.0
-    groups = [{"key": k, "label": _COMP_GROUP.get(k, k), "cost_musd": v * scale / 1e6,
-               "pct": (v / total * 100 if total else 0.0)}
-              for k, v in sorted(comp["by_state"].items(), key=lambda kv: -kv[1]) if v > 0]
+    """Where a scenario's 10-yr cost goes. The engine's cumulative cost is
+    `public homelessness cost + program spend` (simulate.py). So we show TWO kinds
+    of slice: the public cost split by homeless group (the cost of homelessness
+    itself), PLUS a distinct **program spend** slice (the money you chose to spend).
+    Without the spend slice, the per-group figures had to be inflated to absorb the
+    spend — hiding it and making an over-scaled budget look like it cost that much
+    on homelessness. `baseline_usd` (do-nothing public cost) drives the saves bar."""
+    comp = metrics.cost_composition(params, scenario)        # deterministic public cost by group
+    pub_total = comp["total"] or 1.0
+    # Program spend over the horizon (the donut's scenario is act-now → active every
+    # month, so spend = annual budget × horizon years). This is the slice you control.
+    horizon_years = params["meta"]["horizon_months"] / 12.0
+    spend_usd = max(0.0, float(getattr(scenario, "annual_budget_musd", 0.0)) * 1e6 * horizon_years)
+    # total_usd (the on-screen MC P50) = public + spend; split it back the same way,
+    # scaling the public-by-group split to the public portion (≈1× now, not ~2×).
+    public_display = max(total_usd - spend_usd, 0.0)
+    pscale = public_display / pub_total
+    rows = [(k, v * pscale) for k, v in comp["by_state"].items() if v > 0]
+    if spend_usd > 0:
+        rows.append(("program_spend", spend_usd))
+    rows.sort(key=lambda kv: -kv[1])
+    denom = total_usd or 1.0
+    groups = [{"key": k, "label": _COMP_GROUP.get(k, k),
+               "cost_musd": val / 1e6, "pct": val / denom * 100} for k, val in rows]
     return {"total_musd": total_usd / 1e6, "baseline_musd": baseline_usd / 1e6,
-            "saves_vs_nothing_musd": (baseline_usd - total_usd) / 1e6, "groups": groups}
+            "saves_vs_nothing_musd": (baseline_usd - total_usd) / 1e6,
+            "spend_musd": spend_usd / 1e6, "groups": groups}
 
 
 def scenario_payload(budget=50.0, delay=3, n_mc=200, mix=None, coc=None):
@@ -296,18 +311,25 @@ def effect_band_payload(budget=50.0, delay=3):
                      "cow_hi_musd": eb["cow_at_hi"] / 1e6, "effect_lo": eb["effect_lo"], "effect_hi": eb["effect_hi"]})
 
 
-OUT_DIR = os.path.join(REPO, "outputs")
+# Writable locations. Default to the repo, but honor env overrides so a read-only
+# host (e.g. Vercel serverless, where only /tmp is writable) can redirect them.
+OUT_DIR = os.environ.get("WAITCOST_OUT_DIR", os.path.join(REPO, "outputs"))
+MEMORY_PATH = os.environ.get("WAITCOST_MEMORY_PATH", os.path.join(REPO, "MEMORY.md"))
 
 
 def make_agent(coc=None):
     """Construct a WaitCostAgent for a CoC (used by /ask, /ask/stream, exports)."""
     override = build_params_for_coc(coc) if coc and coc != "CA-600" else None
-    return WaitCostAgent(PARAMS_PATH, memory_path=os.path.join(REPO, "MEMORY.md"),
+    return WaitCostAgent(PARAMS_PATH, memory_path=MEMORY_PATH,
                          max_auto_tier=1, params=override)
 
 
 def run_agent(question, approve_allocation=False, coc=None, on_step=None):
     """Run the full agent loop and return the raw (not-yet-jsonable) result dict."""
+    try:
+        os.makedirs(OUT_DIR, exist_ok=True)
+    except OSError:
+        pass  # read-only fs — brief-file artifacts are best-effort; the payload is self-contained
     agent = make_agent(coc)
     return agent.answer(question, out_dir=OUT_DIR,
                         approve_allocation=approve_allocation, on_step=on_step)

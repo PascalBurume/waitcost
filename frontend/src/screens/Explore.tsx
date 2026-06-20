@@ -37,7 +37,11 @@ export function ExploreScreen() {
         permanent_supportive_housing: mix.psh / total,
       };
       Promise.all([
-        api.scenario({ budget_musd: budget, delay_years: delay, n_mc: 120, mix: mixFrac, coc }, ctrl.signal),
+        // Use the canonical Monte-Carlo count (config monte_carlo_runs = 400) — the
+        // same one /ask and /chart use — so the status-quo baseline reads IDENTICALLY
+        // across every screen. (A smaller count tuned for speed made the median drift,
+        // e.g. $29.6B here vs $29.7B on Ask.)
+        api.scenario({ budget_musd: budget, delay_years: delay, n_mc: 400, mix: mixFrac, coc }, ctrl.signal),
         api.effectBand(budget, delay, ctrl.signal),
       ]).then(([s, e]) => { setScn(s); setEff(e); setLoading(false); setError(null); })
         .catch((err) => { if (err?.name !== "AbortError") { setError(err); setLoading(false); } });
@@ -61,7 +65,7 @@ export function ExploreScreen() {
       {error ? <ErrorState error={error} onRetry={() => setBudget((b) => b)} /> : (
         <div className="explore-grid">
           <div className="card explore-controls">
-            <Slider label="Annual budget" value={budget} min={0} max={100} step={5} fmt={(v) => `$${v}M`} onChange={setBudget}
+            <Slider label="Annual budget" value={budget} min={0} max={200} step={5} fmt={(v) => `$${v}M`} onChange={setBudget}
               sub="New annual spend on intervention." />
             <Slider label="Years of delay" value={delay} min={0} max={8} step={1} fmt={(v) => `${v} yr`} onChange={setDelay}
               sub="How long before the program starts." />
@@ -84,12 +88,25 @@ export function ExploreScreen() {
                 sub={sq ? `80% ${fmtMusd(sq.cum_cost_p10_musd)} – ${fmtMusd(sq.cum_cost_p90_musd)}` : "computing…"} />
             </div>
 
+            {savings != null && savings < 0 && sq && (
+              <div className="card" style={{ borderLeft: "3px solid #c8881e", padding: "11px 15px",
+                fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.55 }}>
+                <b style={{ color: "var(--ink)" }}>Why the negative numbers?</b> At ${budget}M/yr, the
+                program is bigger than {city}'s homelessness problem can use — its whole 10-year public
+                cost is only {fmtMusd(sq.cum_cost_p50_musd)}. So acting now <b>spends more than it saves</b>:
+                the program costs about {fmtMusd(-savings)} more than doing nothing, which is why
+                “acting now saves” is negative. And because the overspend starts sooner if you act now,
+                <b> waiting becomes cheaper</b> — that’s the negative “cost of waiting.” Lower the budget
+                to find the point where acting now starts paying back.
+              </div>
+            )}
+
             <div className="card chart-card">
               <div className="row" style={{ justifyContent: "space-between", marginBottom: 2 }}>
                 <span className="chart-title">Where your program's 10-year cost goes</span>
                 <span className="pill">{loading ? "updating…" : "live"}</span>
               </div>
-              <div className="chart-cap" style={{ marginTop: 0, marginBottom: 8 }}>The cost if you act now at this budget &amp; mix, by group — tune the sliders and watch the total drop (and the green savings grow) below the do-nothing baseline.</div>
+              <div className="chart-cap" style={{ marginTop: 0, marginBottom: 8 }}>The 10-year cost if you act now: the public cost of homelessness split by group, plus a distinct <b>program spend</b> slice (the money you choose to spend). When the spend slice dwarfs the homelessness slices, the budget is over-scaled for this city.</div>
               {scn ? <CostDonut composition={scn.composition} /> : <ChartSkel h={220} />}
               <div className="chart-src" style={{ marginTop: 10 }}><span aria-hidden>◆</span> Per-group public cost = people in each group × per-person monthly cost (Economic Roundtable) × time, discounted.</div>
             </div>
@@ -99,7 +116,7 @@ export function ExploreScreen() {
                 <span className="chart-title">What your decision is worth, over time</span>
                 <span className="pill">{loading ? "updating…" : "live"}</span>
               </div>
-              <div className="chart-cap" style={{ marginTop: 0, marginBottom: 8 }}>Extra public cost vs. acting now — the gap that opens above the baseline is the cost of waiting (and the do-nothing penalty), growing each year.</div>
+              <div className="chart-cap" style={{ marginTop: 0, marginBottom: 8 }}>Each line is a path's extra public cost vs. acting now (the flat $0 line). <b>Above $0</b>, that path costs more than acting now — the cost of waiting. <b>Below $0</b>, acting now is the costlier choice (your spend outweighs the savings) — a sign the budget is over-scaled for this city.</div>
               {scn ? <FanChart scn={scn} /> : <ChartSkel h={420} />}
               <div className="chart-src" style={{ marginTop: 10 }}><span aria-hidden>◆</span> Paired Monte-Carlo differences vs. the act-now baseline (HUD PIT + Census ACS). Shaded = 80% (P10–P90) range.</div>
             </div>
@@ -164,6 +181,11 @@ function MixControl({ mix, setMix }: { mix: Mix; setMix: (m: Mix) => void }) {
 /** Divergence chart: extra public cost vs. acting now, by year. Acting now is the
  *  flat $0 baseline; the GAP that opens above it is the cost of waiting / the
  *  do-nothing penalty — visible here precisely because the absolute totals overlap. */
+// Signed extra-cost label: "+$243.8M" when a path costs MORE than acting now,
+// "−$243.8M" when it costs LESS (the over-scaled case). A hardcoded "+" used to
+// render the nonsensical "+$-243.8M".
+const signedMusd = (v: number) => (v >= 0 ? "+" : "−") + fmtMusd(Math.abs(v));
+
 function FanChart({ scn }: { scn: ScenarioPayload }) {
   const { show, hide, node } = useTip();
   const W = 780, h = 430, pad = { l: 80, r: 132, t: 24, b: 44 };
@@ -216,7 +238,7 @@ function FanChart({ scn }: { scn: ScenarioPayload }) {
             { key: "act", color: "var(--viz-act)", text: "Act now · $0", y0: y0 },
             ...series.map((s) => ({
               key: s.key, color: s.color, y0: y(s.band.p50[last]),
-              text: `+${fmtMusd(s.band.p50[last])}`,
+              text: signedMusd(s.band.p50[last]),
             })),
           ].map((it) => ({ ...it, ly: it.y0 })).sort((a, b) => a.y0 - b.y0);
           const GAP = 16;
@@ -242,7 +264,7 @@ function FanChart({ scn }: { scn: ScenarioPayload }) {
             onMouseMove={(e) => show(e, (
               <div>
                 <div style={{ fontWeight: 700, marginBottom: 4 }}>Year {xv}</div>
-                {series.map((s) => <div key={s.key} className="tip-row"><span className="tip-k">{s.label}</span><span>+{fmtMusd(s.band.p50[j])}</span></div>)}
+                {series.map((s) => <div key={s.key} className="tip-row"><span className="tip-k">{s.label}</span><span>{signedMusd(s.band.p50[j])}</span></div>)}
                 <div className="tip-row"><span className="tip-k">Act now</span><span>$0 (baseline)</span></div>
               </div>
             ))} onMouseLeave={hide} />

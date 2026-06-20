@@ -2,7 +2,7 @@
 
 Each `register(...)` call adds one capability. Call ORDER is classification
 priority (matches the old top-to-bottom order of planner.classify_intent).
-Triggers, tiers, charts, catalog text, and the Gemma few-shot example all live
+Triggers, tiers, charts, catalog text, and the Claude few-shot example all live
 here; planner / orchestrator / viz / tools derive their structures from this.
 """
 import re
@@ -15,7 +15,7 @@ _DEF = "%(default)s"   # filled with the default budget when the prompt is built
 
 # Budget-count helper for the compare_budgets predicate (kept local to avoid an
 # import cycle with planner, which imports this registry).
-_BUDGET_RE = re.compile(r"\$?\s*(\d+(?:\.\d+)?)\s*(?:m\b|million)", re.I)
+_BUDGET_RE = re.compile(r"\$?\s*(\d+(?:\.\d+)?)\s*(?:million|billion|thousand|mm|bn|m|b|k)\b", re.I)
 
 
 def _n_budgets(q):

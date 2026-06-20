@@ -1,0 +1,11 @@
+# Lean runtime deps for the Vercel Python serverless function (api/index.py).
+# Vercel installs from this file (adjacent to the entrypoint). Kept minimal to stay
+# well under Vercel's 250 MB unzipped function limit — no uvicorn (Vercel provides the
+# ASGI server), and no streamlit / plotly / pytest / httpx (not served at runtime).
+numpy>=1.24
+pandas>=2.0
+pyyaml>=6.0
+fastapi>=0.110
+anthropic>=0.40        # Claude planner + narrator (used when ANTHROPIC_API_KEY is present)
+python-docx>=1.1       # brief export
+reportlab>=4.0         # brief export

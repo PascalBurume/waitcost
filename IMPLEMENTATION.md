@@ -165,7 +165,7 @@ are ranges."* Nav tabs: **Ask · Explore · Visualize · Where's the AI · Equit
 The selected `coc` is **global state** — changing it re-fetches and re-skins every screen.
 
 ### Screens (build in this order)
-1. **Ask (hero).** One NL input + suggested-question chips + system-facts row ("17 CoC cities · 4 AI
+1. **Ask (hero).** One NL input + suggested-question chips + system-facts row ("17 CoC cities · 5 AI
    agents · 18 decision charts · runs fully offline"). On submit → **thinking-stream**: stream the
    trajectory steps from `/ask`, each with a **tier badge**, pausing at any Tier-2 step. Then reveal
    the **Direct Answer card** (headline number + 80% range + plain-English sentence), the

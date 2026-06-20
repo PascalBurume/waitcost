@@ -296,7 +296,7 @@ def test_brief_cites_card_verdict_verbatim(monkeypatch):
     card's verdict sentence (decision['headline']) verbatim — never recompute or
     rephrase it — and frame the repeat as supporting evidence, so the two surfaces
     can never contradict each other. Forced to rule mode to be hermetic; the
-    orchestrator's citation guarantee holds in the Gemma path too."""
+    orchestrator's citation guarantee holds in the Claude path too."""
     monkeypatch.setenv("WAITCOST_PLANNER", "rule")
     agent = WaitCostAgent(PARAMS_PATH, memory_path="MEMORY.md", max_auto_tier=1)
     res = agent.answer("What if we wait 3 years on a $15M program?", out_dir="outputs")
@@ -325,9 +325,8 @@ def test_provenance_payload_covers_every_metric_family():
     assert "range" in prov["cost_of_waiting"]["note"].lower()
 
 
-def test_gemma4_is_the_default_model():
-    assert planner.GEMMA_MODEL == "gemma4:e2b"
-    assert planner.resolve_model(["gemma4:e2b", "x"]) == "gemma4:e2b"
+def test_claude_sonnet_is_the_default_model():
+    assert planner.llm.MODEL == "claude-sonnet-4-6"
 
 
 # --- Multi-CoC: the SAME model reused for other cities ---------------------
@@ -578,70 +577,58 @@ def test_brief_surfaces_learned_model_and_shap():
 
 
 # ===========================================================================
-# FINALIZE: Gemma-default hardening + the four new features
+# FINALIZE: Claude-default hardening + the four new features
 # ===========================================================================
 
-# --- Task A: Gemma-default planner with automatic, invisible fallback -------
-def test_resolve_model_prefers_then_falls_back():
-    """resolve_model: exact tag > same family > any Gemma > None."""
-    assert planner.resolve_model([planner.GEMMA_MODEL, "x"]) == planner.GEMMA_MODEL
-    # family fallback (asked e2b, only e4b pulled) -> same gemma family
-    fam = planner.GEMMA_MODEL.split(":")[0]
-    assert planner.resolve_model([f"{fam}:e4b"]).split(":")[0] == fam
-    # any locally-installed Gemma keeps the demo live
-    assert planner.resolve_model(["gemma4:e2b"]) == "gemma4:e2b"
-    # nothing usable -> None (Ollama down / no Gemma)
-    assert planner.resolve_model([]) is None
-    assert planner.resolve_model(["llama3:8b"]) is None
+# --- Task A: Claude-default planner with automatic, invisible fallback ------
+def test_claude_available_reflects_key(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    assert planner.llm.claude_available() is False
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    assert planner.llm.claude_available() is True
 
 
-def test_gemma_available_reflects_install(monkeypatch):
-    monkeypatch.setattr(planner, "_installed_models", lambda: [])
-    assert planner.gemma_available() is False
-    monkeypatch.setattr(planner, "_installed_models", lambda: [planner.GEMMA_MODEL])
-    assert planner.gemma_available() is True
-
-
-def test_auto_planner_falls_back_when_ollama_fails(params, monkeypatch):
+def test_auto_planner_falls_back_when_llm_fails(params, monkeypatch):
     """Default (auto) mode must degrade SILENTLY to rules when the LLM call dies —
     identical output shape, no exception."""
     monkeypatch.setenv("WAITCOST_PLANNER", "auto")
-    monkeypatch.setattr(planner, "_installed_models", lambda: [planner.GEMMA_MODEL])
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
 
     def boom(*a, **k):
-        raise RuntimeError("ollama unreachable")
+        raise RuntimeError("anthropic unreachable")
 
-    monkeypatch.setattr(planner, "_ollama_generate", boom)
+    monkeypatch.setattr(planner.llm, "generate", boom)
     pl = planner.plan("What if we wait 5 years on a $15M program?", params)
     assert pl["planner"] == "rule_based_fallback"
     assert pl["intent"] == "cost_of_waiting" and pl["delay_years"] == 5
 
 
-def test_auto_planner_skips_gemma_when_down(params, monkeypatch):
-    """auto must not even attempt Gemma (no 20s stall) when Ollama is unreachable."""
+def test_auto_planner_skips_llm_when_no_key(params, monkeypatch):
+    """auto must not even attempt Claude (no stall, no spend) when no key is set."""
     monkeypatch.setenv("WAITCOST_PLANNER", "auto")
-    monkeypatch.setattr(planner, "_installed_models", lambda: [])
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
     def fail(*a, **k):
-        raise AssertionError("must not call Ollama when no model is installed")
+        raise AssertionError("must not call the API when no key is set")
 
-    monkeypatch.setattr(planner, "_ollama_generate", fail)
+    monkeypatch.setattr(planner.llm, "generate", fail)
     assert planner.plan("How long can we wait?", params)["planner"] == "rule_based_fallback"
 
 
-def test_forced_gemma_raises_when_down(params, monkeypatch):
-    """`gemma` (forced) must surface the error rather than silently degrade."""
-    monkeypatch.setenv("WAITCOST_PLANNER", "gemma")
+def test_forced_claude_raises_when_down(params, monkeypatch):
+    """`claude` (forced) must surface the error rather than silently degrade."""
+    monkeypatch.setenv("WAITCOST_PLANNER", "claude")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
 
     def boom(*a, **k):
-        raise RuntimeError("ollama unreachable")
+        raise RuntimeError("anthropic unreachable")
 
-    monkeypatch.setattr(planner, "_ollama_generate", boom)
+    monkeypatch.setattr(planner.llm, "generate", boom)
     with pytest.raises(Exception):
         planner.plan("What if we wait 5 years?", params)
 
 
-# --- Feature ③: Gemma-written brief, number-guarded -------------------------
+# --- Feature ③: Claude-written brief, number-guarded ------------------------
 def test_number_guard_logic():
     facts = "- cost: $12.3M\n- savings: $4,500,000"
     assert planner.numbers_are_grounded("Waiting costs $12.3M over 10 years.", facts)
@@ -651,16 +638,16 @@ def test_number_guard_logic():
 
 
 def test_narrate_brief_rejects_fabricated_numbers(monkeypatch):
-    """Critical guard: if Gemma emits an unseen figure, narrate_brief returns None
+    """Critical guard: if the model emits an unseen figure, narrate_brief returns None
     so the caller uses the deterministic brief."""
-    monkeypatch.setenv("WAITCOST_PLANNER", "gemma")
+    monkeypatch.setenv("WAITCOST_PLANNER", "claude")
     facts = {"cost_of_waiting_median": "$12.3M",
              "disclaimer": "informs not decides"}
-    monkeypatch.setattr(planner, "_ollama_generate",
+    monkeypatch.setattr(planner.llm, "generate",
                         lambda *a, **k: "The cost of waiting is $999.9M over 10 years.")
     assert planner.narrate_brief(facts) is None
     # a grounded memo is accepted verbatim
-    monkeypatch.setattr(planner, "_ollama_generate",
+    monkeypatch.setattr(planner.llm, "generate",
                         lambda *a, **k: "## Decision memo\nWaiting costs $12.3M. Informs, not decides.")
     out = planner.narrate_brief(facts)
     assert out and "12.3" in out

@@ -7,7 +7,7 @@ engine). Because the skill, the FastAPI app, and the agent all funnel through th
 same `payloads`, they CANNOT disagree on a number — the engine owns every figure.
 
 It is offline and deterministic: no network, no API key. When Claude (rather than
-the bundled local Gemma planner) drives this CLI, NL understanding is Claude's and
+the bundled local Claude planner) drives this CLI, NL understanding is Claude's and
 every computed figure is still the Python engine's.
 
 Safety boundaries are preserved here, not just in prose:

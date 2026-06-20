@@ -45,6 +45,7 @@ const STEP_LABEL: Record<string, string> = {
   synthesize_decision: "Synthesize the recommendation",
   optimize_allocation: "Recommend a specific allocation",
   write_brief: "Write the decision brief",
+  evaluate_response: "Check the answer (the Evaluator agent)",
 };
 
 // Friendly label for the question type (the answer eyebrow).
@@ -174,7 +175,7 @@ export function AskScreen({ tools }: { tools: ToolsPayload | null }) {
           {phase === "declined" && result && <Declined result={result} onPick={(s) => { setQ(s); submit(s); }} />}
 
           {phase === "answered" && result && !result.declined && (
-            <Answer result={result} chart={chart} approved={approved} briefOpen={briefOpen} setBriefOpen={setBriefOpen} city={cityName} />
+            <Answer result={result} chart={chart} approved={approved} briefOpen={briefOpen} setBriefOpen={setBriefOpen} city={cityName} question={submitted} />
           )}
           {gateRefused && <GateRefused onReset={reset} />}
         </div>
@@ -295,9 +296,9 @@ function parseHeadline(direct: string): { num: string | null; range: string | nu
   return { num: numMatch ? numMatch[0].trim() : null, range: rangeMatch ? rangeMatch[1].trim() : null };
 }
 
-function Answer({ result, chart, approved, briefOpen, setBriefOpen, city }: {
+function Answer({ result, chart, approved, briefOpen, setBriefOpen, city, question }: {
   result: AskResult; chart: ChartSpec | null; approved: boolean;
-  briefOpen: boolean; setBriefOpen: (b: boolean) => void; city: string;
+  briefOpen: boolean; setBriefOpen: (b: boolean) => void; city: string; question?: string;
 }) {
   const direct = result.direct_answer ?? "";
   const { num, range } = parseHeadline(direct);
@@ -358,6 +359,10 @@ function Answer({ result, chart, approved, briefOpen, setBriefOpen, city }: {
         )}
       </div>
 
+      {result.response_check && (
+        <ResponseCheckButton rc={result.response_check} echo={result.plan?.param_echo} repaired={result.repaired} question={question} />
+      )}
+
       {result.decision && <Recommendation decision={result.decision} />}
 
       {result.decision && result.brief_markdown && !briefOpen && (
@@ -389,8 +394,6 @@ function Answer({ result, chart, approved, briefOpen, setBriefOpen, city }: {
         </div>
       )}
 
-      <Trajectory steps={result.trajectory ?? []} />
-
       {result.brief_markdown && (
         <div className="card brief-card" id="decision-brief">
           <button className="brief-toggle" aria-expanded={briefOpen} onClick={() => setBriefOpen(!briefOpen)}>
@@ -409,6 +412,144 @@ function fmtMB(m: number | null | undefined): string {
   const neg = m < 0, a = Math.abs(m);
   const s = a >= 1000 ? `$${(a / 1000).toFixed(1)}B` : `$${a.toFixed(1)}M`;
   return neg ? `−${s}` : s;
+}
+
+// The Evaluator agent's verdict, rendered under the answer. The whole point: when
+// the AI is unsure or wrong, the user sees WHAT and WHY — not a confident mistake.
+const RC_GREEN = "#1d9e75", RC_AMBER = "#c8881e", RC_RED = "#d93025", RC_BLUE = "#1a73e8";
+const RC_STATUS: Record<string, { label: string; color: string }> = {
+  pass: { label: "Checked — looks solid", color: RC_GREEN },
+  warn: { label: "Checked — read with caveats", color: RC_AMBER },
+  repair: { label: "Self-corrected before showing this", color: RC_BLUE },
+  decline: { label: "Withheld", color: RC_RED },
+};
+const RC_ICON: Record<string, JSX.Element> = {
+  ok: <Icon.Check size={13} />, warn: <Icon.Info size={13} />, fail: <Icon.Slash size={13} />,
+};
+const RC_DOT: Record<string, string> = { ok: RC_GREEN, warn: RC_AMBER, fail: RC_RED };
+
+// Compact launcher: the Response Check is hidden behind this chip; clicking it opens
+// the verification as a popup (and auto-plays the walkthrough), so the answer stays clean.
+function ResponseCheckButton(props: {
+  rc: NonNullable<AskResult["response_check"]>; echo?: string; repaired?: boolean; question?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const s = RC_STATUS[props.rc.status] ?? RC_STATUS.pass;
+  return (
+    <>
+      <button className="rc-launch" onClick={() => setOpen(true)} aria-haspopup="dialog"
+        style={{ borderLeftColor: s.color }}>
+        <Icon.Shield size={15} style={{ color: s.color, flex: "0 0 auto" }} />
+        <b>Response check</b>
+        <span className="rc-launch-dot" style={{ background: s.color }} />
+        <span style={{ color: "var(--ink-2)" }}>{s.label}</span>
+        <span className="rc-launch-go" style={{ color: s.color }}>See it run ▶</span>
+      </button>
+      <Modal open={open} onClose={() => setOpen(false)} labelledBy="rc-modal-title">
+        <div className="rc-modal">
+          <div className="rc-modal-head">
+            <span id="rc-modal-title" className="row gap-10" style={{ color: s.color }}>
+              <Icon.Shield size={17} /><b>Response check</b>
+            </span>
+            <span className="pill" style={{ color: s.color }}>{s.label}</span>
+          </div>
+          <ResponseCheck {...props} bare autoPlay />
+          <div className="rc-modal-actions">
+            <button className="btn btn-primary btn-sm" onClick={() => setOpen(false)}>
+              <Icon.Check size={14} /> Got it
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </>
+  );
+}
+
+function ResponseCheck({ rc, echo, repaired, question, bare, autoPlay }: {
+  rc: NonNullable<AskResult["response_check"]>; echo?: string; repaired?: boolean;
+  question?: string; bare?: boolean; autoPlay?: boolean;
+}) {
+  const s = RC_STATUS[rc.status] ?? RC_STATUS.pass;
+  const n = rc.checks.length;
+  // Replay mode: re-reveal the (already-computed) checks one-by-one — "see it run"
+  // on the user's own question. No re-fetch; the verdict can't disagree with the answer.
+  const [revealed, setRevealed] = useState(autoPlay ? 0 : n);
+  const [replaying, setReplaying] = useState(false);
+  const [played, setPlayed] = useState(false);
+  const timers = useRef<number[]>([]);
+  useEffect(() => () => { timers.current.forEach(clearTimeout); }, []);
+
+  const play = () => {
+    timers.current.forEach(clearTimeout); timers.current = [];
+    setReplaying(true); setPlayed(true);
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      setRevealed(n);
+      timers.current.push(window.setTimeout(() => setReplaying(false), 200));
+      return;
+    }
+    setRevealed(0);
+    for (let i = 0; i < n; i++)
+      timers.current.push(window.setTimeout(() => setRevealed(i + 1), 420 * (i + 1)));
+    timers.current.push(window.setTimeout(() => setReplaying(false), 420 * (n + 1)));
+  };
+
+  // When opened in the popup, run the walkthrough automatically on mount.
+  useEffect(() => { if (autoPlay) play(); /* run once on open */ // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const shown = replaying ? rc.checks.slice(0, revealed) : rc.checks;
+  return (
+    <div className={bare ? undefined : "card response-check"}
+      style={bare ? undefined : { borderLeft: `3px solid ${s.color}` }}>
+      <div className="row gap-10" style={{ justifyContent: bare ? "flex-end" : "space-between", marginBottom: 8 }}>
+        {!bare && (
+          <span className="row gap-10" style={{ color: s.color }}>
+            {replaying ? <span className="spin"><Icon.Spinner size={16} /></span> : <Icon.Shield size={16} />}
+            <b>Response check</b>
+          </span>
+        )}
+        <span className="row gap-10">
+          <button className="btn btn-quiet btn-sm" onClick={play} disabled={replaying}>
+            {replaying ? "Running…" : (played ? "Replay ▶" : "See it run ▶")}
+          </button>
+          {!bare && (
+            <span className="pill" style={{ color: s.color }}>
+              {s.label}{repaired && rc.status !== "repair" ? " · self-corrected" : ""}
+            </span>
+          )}
+        </span>
+      </div>
+      {replaying && question ? (
+        <div className="fade" style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", marginBottom: 8 }}>
+          Checking the answer to: <b style={{ color: "var(--ink)" }}>“{question}”</b>
+        </div>
+      ) : echo ? (
+        <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", marginBottom: 8 }}>
+          I read this as: <b style={{ color: "var(--ink)" }}>{echo}</b>
+        </div>
+      ) : null}
+      <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+        {shown.map((c, i) => {
+          const running = replaying && revealed < n && i === revealed - 1;
+          return (
+            <li key={c.name} className={replaying ? "fade" : undefined}
+              style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "4px 0", fontSize: "var(--fs-sm)" }}>
+              <span style={{ color: running ? "var(--ink-3)" : RC_DOT[c.status], flex: "0 0 auto", transform: "translateY(2px)" }}>
+                {running ? <span className="spin"><Icon.Spinner size={13} /></span> : RC_ICON[c.status]}
+              </span>
+              <span style={{ flex: "0 0 92px", fontWeight: 600, textTransform: "capitalize", color: "var(--ink-2)" }}>{c.name.replace(/_/g, " ")}</span>
+              <span style={{ flex: 1, color: running ? "var(--ink-3)" : (c.status === "ok" ? "var(--ink-2)" : "var(--ink)") }}>
+                {running ? "checking…" : c.detail}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      {played && revealed >= n && (
+        <div className="fade" style={{ marginTop: 10, fontWeight: 700, color: s.color }}>→ {s.label}</div>
+      )}
+    </div>
+  );
 }
 
 const VERDICT_ICON: Record<string, JSX.Element> = {
@@ -481,9 +622,13 @@ function ConfidenceMeter({ level }: { level: "high" | "medium" | "low" }) {
 function SliceBar({ baseline, slice, range, delay }: {
   baseline: number; slice: number; range: [number, number] | null; delay: number;
 }) {
-  const pct = Math.max(0, Math.min(100, (slice / baseline) * 100));
+  // Use MAGNITUDE: the slice can be negative (e.g. an over-scaled budget makes
+  // waiting cheaper than acting now), and the bar/label show how big the move is,
+  // not its sign. Clamping the signed value to 0 used to mislabel a 21% slice as "<1%".
+  const pct = Math.min(100, (Math.abs(slice) / baseline) * 100);
   const drawPct = Math.max(pct, 1.2);             // keep the sliver visible
-  const hiPct = range ? Math.max(0, Math.min(100, (range[1] / baseline) * 100)) : pct;
+  const hiMag = range ? Math.max(Math.abs(range[0]), Math.abs(range[1])) : Math.abs(slice);
+  const hiPct = Math.min(100, (hiMag / baseline) * 100);
   return (
     <div className="slice-viz">
       <div className="slice-row">
@@ -514,36 +659,6 @@ function DecChip({ label, value, sub, accent }: { label: string; value: string; 
       <div className="dec-chip-label">{label}</div>
       <div className="dec-chip-val tnum">{value}</div>
       {sub && <div className="dec-chip-sub">{sub}</div>}
-    </div>
-  );
-}
-
-function Trajectory({ steps }: { steps: TrajectoryStep[] }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="card brief-card">
-      <button className="brief-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <span className="row gap-10"><Icon.Shield size={17} /><b>Agent trajectory</b><span className="muted" style={{ fontWeight: 400 }}>{steps.length} tool calls · action tiers logged</span></span>
-        <Icon.Chevron size={16} style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
-      </button>
-      {open && (
-        <div className="brief-body" style={{ paddingTop: 16 }}>
-          <div className="steps">
-            {steps.map((s, i) => (
-              <div className="step-item" key={i} data-status="done">
-                <div className="step-rail"><span className="step-dot done"><Icon.Check size={12} /></span></div>
-                <div className="step-body"><div className="step-head">
-                  <span className="step-label">{STEP_LABEL[s.skill] ?? s.skill}</span>
-                  {s.detail && <span className="step-detail-inline">· {s.detail}</span>}
-                  <span className="step-tool">{s.skill}</span>
-                  <TierBadge tier={s.tier} compact />
-                  {s.tier === 2 && s.approved && <span className="pill">approved by human</span>}
-                </div></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -617,8 +732,35 @@ function MdTable({ rows }: { rows: string[] }) {
 }
 
 function Declined({ result, onPick }: { result: AskResult; onPick: (s: string) => void }) {
-  // A greeting / meta question gets a warm welcome, not a refusal.
   const greeting = !!result.greeting;
+  const alts = result.route_alternatives;
+  const suggested = result.response_check?.suggested_reformulation;
+
+  // Confidence gate fired: the routers disagreed at low confidence, so we ASK
+  // which reading instead of guessing. Each chip re-asks, disambiguated.
+  if (alts && alts.length) {
+    return (
+      <div className="declined-wrap rise">
+        <div className="card declined-card">
+          <span className="declined-ico"><Icon.Scale size={26} /></span>
+          <div className="declined-h serif">Which did you mean?</div>
+          <p className="declined-body">{result.reason ?? "Your question could mean a couple of things — pick the reading you want."}</p>
+          <div className="declined-alt">Pick a reading</div>
+          <div className="declined-suggest">
+            {alts.map((a) => (
+              <button key={a.intent} className="suggest-chip" style={{ justifyContent: "center" }} onClick={() => onPick(a.label)}>{a.label}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Otherwise: greeting (warm welcome), or a refusal (scope / evaluator decline).
+  // A suggested reformulation, when present, is offered as the first chip.
+  const chips = suggested
+    ? [suggested]
+    : ["What does it cost to wait 3 years?", "How long can we afford to wait?", "Who bears homelessness most here?"];
   return (
     <div className="declined-wrap rise">
       <div className={`card declined-card${greeting ? " greeting" : ""}`}>
@@ -627,7 +769,7 @@ function Declined({ result, onPick }: { result: AskResult; onPick: (s: string) =
         <p className="declined-body">{result.reason ?? "This tool answers CoC-level budget-timing questions — it doesn't profile individuals or sub-city geographies."}</p>
         <div className="declined-alt">{greeting ? "Try asking" : "Try an in-scope question"}</div>
         <div className="declined-suggest">
-          {["What does it cost to wait 3 years?", "How long can we afford to wait?", "Who bears homelessness most here?"].map((s) => (
+          {chips.map((s) => (
             <button key={s} className="suggest-chip" style={{ justifyContent: "center" }} onClick={() => onPick(s)}>{s}</button>
           ))}
         </div>

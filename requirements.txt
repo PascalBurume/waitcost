@@ -17,10 +17,11 @@ httpx>=0.27          # FastAPI TestClient (used by the API tests)
 python-docx>=1.1
 reportlab>=4.0
 
-# Offline LLM planner + narrator (no Python dep): run Gemma via Ollama. Default
-# model is gemma4:e2b; resolve_model() falls back to any installed Gemma family.
-#   1) install Ollama (https://ollama.com)   2) `ollama pull gemma4:e2b`
-#   3) set WAITCOST_PLANNER=gemma   (falls back to rule-based if unreachable)
+# LLM planner + narrator: Claude Sonnet 4.6 via the Anthropic API.
+#   1) pip install (this line)   2) export ANTHROPIC_API_KEY=...
+#   3) WAITCOST_PLANNER=claude (or auto). Falls back to deterministic rule-mode if
+#      no key is set or the API is unreachable — so the demo never breaks.
+anthropic>=0.40
 
 # Stretch / production AI components (not needed for the offline demo)
 # pymc>=5.10          # Bayesian calibration of transition rates
