@@ -77,7 +77,7 @@ homelessness situation and its care plans / response strategy**, grounded in a c
   "trajectory": [ ... ]
 }
 ```
-- **Narration:** when Claude Sonnet 4.6 is available (see `FINALIZE.md`), use it to write `situation`/`plan.summary`
+- **Narration:** when Claude Sonnet 4.6 is available, use it to write `situation`/`plan.summary`
   from the structured facts, with the **same number-guard**: the LLM may phrase, but every figure must
   trace to `retrieve_us_context()`/`city_sources.json`; otherwise fall back to a deterministic template.
 - Always attach `sources` and the `label`.
@@ -115,7 +115,7 @@ homelessness situation and its care plans / response strategy**, grounded in a c
 - **Keep every agent/chart count in sync with the registry** (`agent/tools.py` → `/tools`). After the
   decision and evaluator agents landed the canonical figure is **5 agents · 16 capabilities · 16 skills · 18 charts**
   (was bumped 2 → 3 here, then 3 → 4, then 4 → 5). When a count changes, grep the docs for the old number
-  (`README.md`, `ARCHITECTURE.md`, `IMPLEMENTATION.md`, `DESIGN_PROMPT.md`, the Streamlit app, the design
+  (`README.md`, `ARCHITECTURE.md`, `IMPLEMENTATION.md`, the Streamlit app, the design
   copy) and update all of them — the registry is the single source of truth.
 
 ---

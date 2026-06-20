@@ -34,8 +34,6 @@ a range.
 
 ```
 design/                      ← the Claude Design export (READ THIS)
-  README.md                  ← generic Claude Design handoff note
-  chats/chat1.md             ← the full design brief + intent (READ FIRST)
   project/WaitCost.html      ← the prototype entry point
   project/src/
     styles.css               ← design tokens + global styles  (copy tokens verbatim)

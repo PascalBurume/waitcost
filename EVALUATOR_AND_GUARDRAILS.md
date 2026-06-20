@@ -1,6 +1,6 @@
 # WaitCost — The Evaluator Agent & "Make Errors Loud"
 
-An add-on to `SONNET_MIGRATION_PLAN.md`. Two goals:
+Two goals:
 1. **Accuracy** — fix the cases where a typed question gets routed/answered wrong.
 2. **Responsible AI** — a real answer to "if our AI gets it wrong, what happens to the user,
    and what have we done about it?"
