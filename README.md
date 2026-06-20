@@ -24,6 +24,115 @@ stopping short of any binding allocation, which stays with a human.
 Calibrated for **CA-600 Los Angeles** on real public data; the same trained
 model scores **17 US cities**.
 
+## How it works — the data flow (read this first)
+
+> **The one rule:** the deterministic engine **owns every number**. The LLM only
+> *routes* the question and *writes prose*; a regex **number-guard rejects any figure
+> the engine didn't compute.** So the agent can sound human while staying as
+> trustworthy as a spreadsheet — every headline is traceable to a simulation output.
+
+A plain-English question flows left-to-right through eight stages. **Blue = the LLM
+(Claude Sonnet 4.6) proposes; green = deterministic code decides.** The guardrails
+(safety rail, data-support check, Tier-2 gate, number-guard, evaluator) sit
+*downstream* of the brain and can never be bypassed.
+
+```mermaid
+flowchart TD
+    Q["💬 Plain-English question<br/><i>'What if we wait 3 years on a $15M program?'</i>"]
+    Q --> ORCH["🚪 Analyst agent — single front door /ask<br/>agent/orchestrator.py"]
+
+    subgraph ROUTE["1 · ROUTE — LLM proposes, rules veto"]
+      direction TB
+      P["🧠 Claude planner<br/>semantic intent → list of typed tool calls"]
+      RAIL{"🛡️ Safety rail<br/>individual / sub-CoC?"}
+      NORM["⚙️ Deterministic normalizer<br/>re-parses every budget &amp; delay · no silent drop"]
+      P --> RAIL
+      RAIL -- "yes" --> OOS["out_of_scope — forced"]
+      RAIL -- "no" --> NORM
+    end
+    ORCH --> P
+
+    NORM --> SUPPORT{"2 · Enough data?<br/>check_data_support()"}
+    SUPPORT -- "too thin / synthetic" --> DECLINE["🙅 Decline — honestly"]
+    SUPPORT -- "ok" --> KIND{"3 · Kind of question?"}
+
+    KIND -- "concept / data lookup" --> RET["📚 Retrieval — cited, no engine<br/>agent/retrieval.py"]
+    KIND -- "city situation / plan" --> CB["🏙️ City Brief agent<br/>agent/city_brief.py"]
+    KIND -- "quantitative" --> ENGINE
+
+    subgraph ENGINE["4 · DETERMINISTIC ENGINE — owns every number"]
+      direction TB
+      MC["🎲 Monte-Carlo scenarios<br/>model/simulate · montecarlo · cost"]
+      MET["📐 Metrics: cost-of-waiting · break-even · ROI · sensitivity"]
+      BT["✅ Backtest + effect band — uncertainty"]
+      MC --> MET --> BT
+    end
+
+    ENGINE --> DEC["🧭 5 · Decision agent<br/>act-now / wait + confidence on direction"]
+    RET --> GUARD
+    CB --> GUARD
+    DEC --> TIER{"6 · Tier-2 gate<br/>binding allocation?"}
+    TIER -- "yes" --> HUMAN["✋ Stop → human approval"]
+    TIER -- "no" --> GUARD
+
+    GUARD["🔒 7 · Number-guard<br/>reject any figure the engine didn't compute"]
+    GUARD --> EVAL["🔎 8 · Evaluator agent · 6 checks<br/>grounding · scope · params · confidence · chart↔text · Q-match"]
+    EVAL -- "hard fail" --> RETRY["🔁 1-retry self-correct → else decline"]
+    EVAL -- "pass / warn" --> OUT
+
+    OUT["📄 Decision brief + matching chart<br/><b>every number traceable to a sim output</b>"]
+
+    classDef llm fill:#dbeafe,stroke:#2563eb,color:#1e3a5f;
+    classDef det fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    classDef guard fill:#fef9c3,stroke:#ca8a04,color:#713f12;
+    class P,DEC llm;
+    class ORCH,NORM,MC,MET,BT,RET,CB,OUT det;
+    class RAIL,SUPPORT,TIER,GUARD,EVAL,HUMAN,OOS,DECLINE,RETRY guard;
+```
+
+### Why a judge can trust the numbers — the guard, isolated
+
+The single mechanism that makes an LLM-written brief as reliable as a spreadsheet:
+Claude may only phrase facts the engine already computed. Anything else is dropped.
+
+```mermaid
+flowchart LR
+    ENG["⚙️ Deterministic engine<br/>the ONLY source of numbers"] -- "computed figures" --> FACTS[("📦 Engine facts")]
+    FACTS --> CLAUDE["🧠 Claude writes the brief<br/>using only these facts"]
+    CLAUDE --> NG{"🔒 Number-guard<br/>every figure ∈ engine facts?"}
+    NG -- "yes ✅" --> SHOW["Ship Claude's brief"]
+    NG -- "no ❌" --> FALLBACK["Drop it → deterministic brief"]
+
+    classDef llm fill:#dbeafe,stroke:#2563eb,color:#1e3a5f;
+    classDef det fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    classDef guard fill:#fef9c3,stroke:#ca8a04,color:#713f12;
+    class ENG,SHOW,FALLBACK det;
+    class CLAUDE llm;
+    class NG guard;
+```
+
+### One engine, every surface (nothing else does math)
+
+The same Python skills back the CLI, the API, the React app, the Streamlit app, and
+the installable Agent Skill — so they **can never disagree on a number.**
+
+```mermaid
+flowchart TD
+    subgraph CORE["🐍 Engine (Python) — the asset"]
+      SK["5 agents · 16 capabilities · 16 skills · 18 charts<br/>model/ · analysis/ · agent/ · data/"]
+    end
+    SK --- API["⚡ FastAPI bridge<br/>api/main.py"]
+    SK --- CLI["⌨️ run_demo.py / eval<br/>62 pytest"]
+    SK --- SKILL["🧩 Agent Skill<br/>skills/waitcost/"]
+    API -- "JSON / HTTP" --> REACT["⚛️ React + TypeScript<br/>frontend/"]
+    API --- ST["📊 Streamlit<br/>app/dashboard.py"]
+
+    classDef det fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    classDef ui fill:#ede9fe,stroke:#7c3aed,color:#4c1d95;
+    class SK,API,CLI,SKILL det;
+    class REACT,ST ui;
+```
+
 ## Quickstart
 
 ```bash
@@ -172,6 +281,15 @@ identical, not re-sampled).
   number-guarded prose, and (opt-in `WAITCOST_AGENT=toolloop`) a real tool-use loop
   that orchestrates the engine over multiple steps — with a deterministic rule
   fallback so the demo never depends on the network.
+
+The model evidence behind those claims (regenerated by the notebook in `notebooks/`):
+
+| What the engine learned | Does the model hold up? |
+|---|---|
+| <img src="notebooks/figures/shap_target.png" alt="SHAP feature attribution — housing cost is the top driver of homeless inflow" width="420"> | <img src="notebooks/figures/backtest.png" alt="Backtest — seeded 2023 PIT reproduces observed 2024 within band" width="420"> |
+| **SHAP attribution** — exact additive contributions; housing cost dominates inflow. | **Backtest** — predicted vs. observed 2024 PIT, ~4% error for CA-600. |
+| <img src="notebooks/figures/loo_fit.png" alt="Leave-one-CoC-out fit, R squared about 0.45" width="420"> | <img src="notebooks/figures/decision_charts.png" alt="Sample decision charts produced by the visualization agent" width="420"> |
+| **Leave-one-CoC-out fit** — honest out-of-sample R²≈0.45 across 17 cities. | **Decision charts** — the visualization agent renders the same figures the brief states. |
 
 ## Data — all real, all sourced (see `data/SOURCES.md`)
 
