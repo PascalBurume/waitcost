@@ -21,3 +21,4 @@ MEMORY.md
 # OS / editor noise
 .DS_Store
 *.log
+.vercel
