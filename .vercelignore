@@ -30,3 +30,11 @@ Dockerfile
 Dockerfile.backend
 Dockerfile.backend.dockerignore
 docker-compose.yml
+
+# The ROOT requirements.txt is the local/dev set — streamlit, plotly, pytest, uvicorn,
+# httpx. Vercel's Python step installs whatever requirements.txt sits at the project
+# root, so it pulled 61 packages (588 MB) and blew past the 500 MB function ceiling,
+# silently ignoring the lean list this function actually needs. That list lives in
+# api/requirements.txt, next to the entrypoint, which is where Vercel looks once this
+# one is out of the way.
+/requirements.txt
